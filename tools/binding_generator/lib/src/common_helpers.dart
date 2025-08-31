@@ -67,6 +67,12 @@ void writeReturnAllocation(ArgumentProxy returnType, CodeSink o) {
     case TypeCategory.typedArray:
       sizeofString = 'TypedArray.sTypeInfo.size';
       break;
+    case TypeCategory.functionPointer:
+      returnTypeName = 'GDExtensionTypePtr';
+      sizeofString = 'sizeOf<GDExtensionTypePtr>()';
+      break;
+    default: // ignore: unreachable_switch_default
+      break;
   }
 
   o.p('final retPtr = arena.allocate<$returnTypeName>($sizeofString);');
@@ -108,6 +114,11 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
       break;
     case TypeCategory.typedArray:
       o.p('return ${returnType.rawDartType}.copyPtr(retPtr.cast());');
+      break;
+    case TypeCategory.functionPointer:
+      o.p('return retPtr.value.cast();');
+      break;
+    default: // ignore: unreachable_switch_default
       break;
   }
 }
@@ -564,6 +575,12 @@ void convertPtrArgumentToDart(
         o.p('$decl = $argumentName.value;');
       }
       break;
+    case TypeCategory.functionPointer:
+      // Stored directly in the slot.
+      o.p('$decl = $argumentName.value.cast();');
+      break;
+    default: // ignore: unreachable_switch_default
+      break;
   }
 }
 
@@ -650,6 +667,12 @@ void convertDartToPtrArgument(
         o.p('$argumentName.value = $varName$bang.nativePtr.cast();');
       }
       break;
+    case TypeCategory.functionPointer:
+      // Pass pointer directly.
+      o.p('$argumentName.value = $varName.cast();');
+      break;
+    default: // ignore: unreachable_switch_default
+      break;
   }
 }
 
@@ -699,6 +722,11 @@ void writePtrReturn(ArgumentProxy argument, CodeSink o) {
       break;
     case TypeCategory.voidType:
       return;
+    case TypeCategory.functionPointer:
+      ret += 'retPtr.cast<GDExtensionTypePtr>().value = ret.cast()';
+      break;
+    default: // ignore: unreachable_switch_default
+      break;
   }
 
   o.p('$ret;');
