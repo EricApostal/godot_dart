@@ -1,31 +1,20 @@
 #include <gdextension_interface.h>
 
-#include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
+#include <godot_cpp/classes/object.hpp>
 
-#include "dart_helpers.h"
 #include "dart_bindings.h"
+#include "dart_helpers.h"
 #include "gde_wrapper.h"
-#include "godot_string_wrappers.h"
 #include "godot_dart_runtime_plugin.h"
+#include "godot_string_wrappers.h"
 
 #include "dart_instance_binding.h"
 #include "ref_counted_wrapper.h"
-#include "script/dart_script_instance.h"
-
-#include "editor/godot_dart_editor_plugin.h"
-#include "editor/dart_progress_dialog.h"
-
 namespace godot_dart {
-
-GodotDartRuntimePlugin *runtime_plugin = nullptr;
 
 void initialize_level(godot::ModuleInitializationLevel p_level) {
   if (p_level == godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_EDITOR) {
-    godot::ClassDB::register_class<GodotDartEditorPlugin>();
-    godot::ClassDB::register_class<DartProgressDialog>();
-
-    godot::EditorPlugins::add_by_type<GodotDartEditorPlugin>();
   }
 
   // TODO - Should we setup different types at different times?
@@ -38,19 +27,11 @@ void initialize_level(godot::ModuleInitializationLevel p_level) {
   if (!gde->initialize()) {
     return;
   }
-
-  // Get the library path
-  runtime_plugin = new GodotDartRuntimePlugin();
-  runtime_plugin->base_init();
 }
 
 void deinitialize_level(godot::ModuleInitializationLevel p_level) {
   if (p_level != godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE) {
     return;
-  }
-
-  if (runtime_plugin != nullptr) {
-    runtime_plugin->shutdown_dart_bindings();
   }
 }
 
@@ -80,5 +61,4 @@ bool GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_ad
 
   return init_obj.init();
 }
-
 }

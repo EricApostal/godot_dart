@@ -10,12 +10,11 @@
 #include <dart_api.h>
 #include <gdextension_interface.h>
 #include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/variant/string.hpp>
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
-#include "script/dart_script.h"
 
 enum class MethodFlags : int32_t {
   None,
@@ -39,7 +38,7 @@ public:
     return _fully_initialized;
   }
   void shutdown();
-  
+
   void reload_code();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,
@@ -79,7 +78,6 @@ public:
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
-  std::set<godot::Ref<DartScript>> _pending_reloads;
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;

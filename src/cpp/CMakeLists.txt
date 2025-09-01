@@ -24,9 +24,6 @@ add_library(godot_dart SHARED
     godot_dart_runtime_plugin.cpp
     godot_string_wrappers.cpp
     ref_counted_wrapper.cpp
-    editor/godot_dart_editor_plugin.cpp
-    editor/dart_templates.cpp
-    "editor/dart_progress_dialog.cpp"
     script/dart_script_language.cpp
     script/dart_script.cpp
     script/dart_resource_format.cpp
