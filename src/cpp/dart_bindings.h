@@ -7,14 +7,12 @@
 #include <thread>
 #include <vector>
 
-#include <dart_api.h>
 #include <gdextension_interface.h>
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
 #include <godot_cpp/variant/string.hpp>
 
 #include "dart_instance_binding.h"
-#include "gde_dart_converters.h"
 
 enum class MethodFlags : int32_t {
   None,
@@ -76,18 +74,6 @@ public:
   bool _is_reloading;
   int32_t _pending_messages;
   std::mutex _work_lock;
-  Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
-
-  Dart_PersistentHandle _godot_dart_library;
-  Dart_PersistentHandle _engine_classes_library;
-  Dart_PersistentHandle _variant_classes_library;
-  Dart_PersistentHandle _native_library;
-
-  // Some things we need often
-  Dart_PersistentHandle _void_pointer_type;
-  Dart_PersistentHandle _void_pointer_optional_type;
-  Dart_PersistentHandle _void_pointer_pointer_type;
-  Dart_PersistentHandle _variant_type;
 };

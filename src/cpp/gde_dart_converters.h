@@ -2,8 +2,6 @@
 
 #include <gdextension_interface.h>
 
-#include <dart_api.h>
-
 struct TypeInfo {
   GDExtensionStringNamePtr type_name = nullptr;
   // Can be null

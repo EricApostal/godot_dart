@@ -5,29 +5,19 @@
 #include <string.h>
 #include <thread>
 
-#include <dart_api.h>
-#include <dart_tools_api.h>
-
 #include <gdextension_interface.h>
 #include <godot_cpp/godot.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
-#include "dart_helpers.h"
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "ref_counted_wrapper.h"
 
-// Forward declarations for Dart callbacks and helpers
-Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
-void dart_message_notify_callback(Dart_Isolate isolate);
-void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info);
-
 struct MethodInfo {
   std::string method_name;
   TypeInfo return_type;
-  Dart_PersistentHandle args_list;
   MethodFlags method_flags;
 };
 
