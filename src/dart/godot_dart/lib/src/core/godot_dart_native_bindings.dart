@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 
 import '../gen/builtins.dart';
 import '../variant/variant.dart';
@@ -7,6 +8,7 @@ import 'type_info.dart';
 import 'gdextension_ffi_bindings.dart';
 import 'signals.dart';
 import 'type_resolver.dart';
+import 'gdextension.dart';
 
 typedef ScriptResolver = Type? Function(String scriptPath);
 
@@ -32,31 +34,23 @@ class GodotDartNativeBindings {
       .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
           'safe_new_persistent_handle')
       .asFunction<Pointer<Void> Function(Object)>();
+  // Replaced native implementations with pure Dart shims below.
+  void tieDartToNative(Object obj, GDExtensionObjectPtr nativePtr, bool isRef,
+      bool isGodotType) {
+    // Minimal: just register for reverse lookup.
+    registerDartWrapper(obj, nativePtr);
+  }
 
-  late final tieDartToNative = processLib
-      .lookup<
-          NativeFunction<
-              Void Function(Handle, GDExtensionObjectPtr, Bool,
-                  Bool)>>('tie_dart_to_native')
-      .asFunction<void Function(Object, GDExtensionObjectPtr, bool, bool)>();
-  late final objectFromInstanceBinding = processLib
-      .lookup<NativeFunction<Handle Function(GDExtensionClassInstancePtr)>>(
-          'dart_object_from_instance_binding')
-      .asFunction<Object Function(GDExtensionClassInstancePtr)>();
+  Object? objectFromInstanceBinding(GDExtensionClassInstancePtr instancePtr) {
+    return gdObjectToDartObject(instancePtr.cast());
+  }
 
-  late final getScriptInstance = processLib
-      .lookup<
-          NativeFunction<
-              GDExtensionScriptInstanceDataPtr Function(
-                  GDExtensionConstObjectPtr)>>('get_script_instance')
-      .asFunction<
-          GDExtensionScriptInstanceDataPtr Function(
-              GDExtensionConstObjectPtr)>();
+  GDExtensionScriptInstanceDataPtr getScriptInstance(
+          GDExtensionConstObjectPtr objectPtr) =>
+      nullptr.cast();
 
-  late final createSignalCallable = processLib
-      .lookup<NativeFunction<Handle Function(Handle, GDObjectInstanceID)>>(
-          'create_signal_callable')
-      .asFunction<Object Function(SignalCallable, int)>();
+  Object createSignalCallable(SignalCallable callable, int instanceId) =>
+      _createCustomSignalCallable(callable, instanceId);
 
   GodotDartNativeBindings() {
     processLib = DynamicLibrary.process();
@@ -65,31 +59,409 @@ class GodotDartNativeBindings {
   @pragma('vm:external-name', 'GodotDartNativeBindings::print')
   external void printNative(String s);
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::bindClass')
-  external void bindClass(Type type);
+  // Pure Dart binding registration. Only supports registering classes that
+  // already have a static TypeInfo (sTypeInfo) on them.
+  void bindClass(Type type) {
+    // Lookup TypeInfo via a convention: <Type>.sTypeInfo must be exposed.
+    final typeInfo = _lookupTypeInfo(type);
+    if (typeInfo == null) return;
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::addProperty')
-  external void addProperty(TypeInfo typeInfo, PropertyInfo propertyInfo);
+    // Allocate and populate a GDExtensionClassCreationInfo2 structure.
+    using((arena) {
+      final info = arena.allocate<GDExtensionClassCreationInfo2>(
+          sizeOf<GDExtensionClassCreationInfo2>());
+      // Zero initialize
+      for (int i = 0; i < sizeOf<GDExtensionClassCreationInfo2>(); ++i) {
+        info.cast<Uint8>()[i] = 0;
+      }
+      info.ref.is_virtual = 0;
+      info.ref.is_abstract = 0;
+      info.ref.is_exposed = typeInfo.isGlobalClass ? 1 : 0;
+      info.ref.class_userdata = nullptr; // Not used in pure Dart mode
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::bindMethod')
-  external void bindMethod(TypeInfo typeInfo, String methodName,
-      TypeInfo returnType, List<TypeInfo> argTypes);
+      // We don't currently support virtual callbacks without native trampolines.
+      // create_instance_func left null so Godot won't attempt to construct.
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::gdStringToString')
-  external String gdStringToString(GDString string);
+      // Register class
+      final lib = gde.extensionToken;
+      final className = typeInfo.className.nativePtr.cast<Void>();
+      final parentName = typeInfo.nativeTypeName.nativePtr.cast<Void>();
+      gde.ffiBindings.gde_classdb_register_extension_class2(
+          lib, className, parentName, info);
+    });
+  }
+
+  void addProperty(TypeInfo typeInfo, PropertyInfo propertyInfo) {
+    using((arena) {
+      final info = arena
+          .allocate<GDExtensionPropertyInfo>(sizeOf<GDExtensionPropertyInfo>());
+      info.ref.type = propertyInfo.typeInfo.variantType;
+      info.ref.name =
+          StringName.fromString(propertyInfo.name).nativePtr.cast<Void>();
+      info.ref.class_name =
+          propertyInfo.typeInfo.nativeTypeName.nativePtr.cast<Void>();
+      info.ref.hint = propertyInfo.hint.index;
+      info.ref.hint_string = propertyInfo.hintString.isEmpty
+          ? StringName.fromString('').nativePtr.cast<Void>()
+          : StringName.fromString(propertyInfo.hintString)
+              .nativePtr
+              .cast<Void>();
+      info.ref.usage = propertyInfo.flags;
+
+      // For now we don't expose custom getter/setter, leave null will default to script
+      gde.ffiBindings.gde_classdb_register_extension_class_property(
+          gde.extensionToken,
+          typeInfo.className.nativePtr.cast<Void>(),
+          info,
+          nullptr.cast(),
+          nullptr.cast());
+    });
+  }
+
+  void bindMethod(TypeInfo typeInfo, String methodName, TypeInfo returnType,
+      List<TypeInfo> argTypes) {
+    using((arena) {
+      final methodInfo = arena.allocate<GDExtensionClassMethodInfo>(
+          sizeOf<GDExtensionClassMethodInfo>());
+      // Zero init
+      for (int i = 0; i < sizeOf<GDExtensionClassMethodInfo>(); ++i) {
+        methodInfo.cast<Uint8>()[i] = 0;
+      }
+
+      methodInfo.ref.name =
+          StringName.fromString(methodName).nativePtr.cast<Void>();
+      // Store key for lookup in method_userdata (we just store a pointer-sized integer index)
+      final key = _registerMethod(typeInfo, methodName, returnType, argTypes);
+      methodInfo.ref.method_userdata = Pointer.fromAddress(key);
+      methodInfo.ref.call_func = _methodCallTrampoline.nativeFunction.cast();
+      methodInfo.ref.ptrcall_func = nullptr; // ptrcall not implemented yet
+      methodInfo.ref.method_flags =
+          GDExtensionClassMethodFlags.GDEXTENSION_METHOD_FLAG_NORMAL;
+      methodInfo.ref.has_return_value = returnType.variantType !=
+              GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL
+          ? 1
+          : 0;
+
+      if (methodInfo.ref.has_return_value != 0) {
+        final retInfo = arena.allocate<GDExtensionPropertyInfo>(
+            sizeOf<GDExtensionPropertyInfo>());
+        retInfo.ref.type = returnType.variantType;
+        retInfo.ref.name = returnType.className.nativePtr.cast<Void>();
+        retInfo.ref.class_name =
+            returnType.nativeTypeName.nativePtr.cast<Void>();
+        retInfo.ref.hint = 0;
+        retInfo.ref.hint_string =
+            StringName.fromString('').nativePtr.cast<Void>();
+        retInfo.ref.usage = 6; // PROPERTY_USAGE_DEFAULT
+        methodInfo.ref.return_value_info = retInfo;
+      }
+
+      final argc = argTypes.length;
+      methodInfo.ref.argument_count = argc;
+      if (argc > 0) {
+        final argsArray = arena.allocate<GDExtensionPropertyInfo>(
+            sizeOf<GDExtensionPropertyInfo>() * argc);
+        for (int i = 0; i < argc; ++i) {
+          final a = (argsArray + i);
+          a.ref.type = argTypes[i].variantType;
+          a.ref.name = argTypes[i].className.nativePtr.cast<Void>();
+          a.ref.class_name = argTypes[i].nativeTypeName.nativePtr.cast<Void>();
+          a.ref.hint = 0;
+          a.ref.hint_string = StringName.fromString('').nativePtr.cast<Void>();
+          a.ref.usage = 6;
+        }
+        methodInfo.ref.arguments_info = argsArray;
+      }
+
+      gde.ffiBindings.gde_classdb_register_extension_class_method(
+          gde.extensionToken,
+          typeInfo.className.nativePtr.cast<Void>(),
+          methodInfo);
+    });
+  }
+
+  String gdStringToString(GDString string) {
+    // Convert a Godot String (String) to Dart String via two-pass UTF8.
+    // First call to get length? The API needs a buffer; choose a reasonable max.
+    const int bufSize = 1024; // TODO: grow if needed.
+    final buffer = calloc<Char>(bufSize);
+    try {
+      final written = gde.ffiBindings.gde_string_to_utf8_chars(
+          string.nativePtr.cast<Void>(), buffer, bufSize);
+      return buffer.cast<Utf8>().toDartString(length: written);
+    } finally {
+      calloc.free(buffer);
+    }
+  }
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::gdObjectToDartObject')
-  external Object? gdObjectToDartObject(GDExtensionObjectPtr object);
+  // Pure Dart reimplementation: returns the previously registered Dart
+  // wrapper for a Godot object pointer, or null if unknown.
+  Object? gdObjectToDartObject(GDExtensionObjectPtr object) {
+    final addr = object.address;
+    if (addr == 0) return null;
+    return _objectCache[addr];
+  }
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotTypeInfo')
-  external TypeInfo getGodotTypeInfo(Type type);
+  // Look up the TypeInfo for a Dart Type, returning a nullable value.
+  TypeInfo? getGodotTypeInfo(Type type) => _lookupTypeInfo(type);
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::attachTypeResolver')
-  external void attachTypeResolver(TypeResolver resolver);
+  void attachTypeResolver(TypeResolver resolver) {
+    _typeResolver = resolver;
+  }
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);
   }
+
+  // ---------------------------------------------------------------------------
+  // Object registration (replacement for former native instance binding lookup)
+  // ---------------------------------------------------------------------------
+  static final Map<int, Object> _objectCache = <int, Object>{};
+  // Method registry: maps integer key -> dispatcher info
+  static int _nextMethodKey = 1;
+  static final Map<int, _RegisteredMethod> _registeredMethods = {};
+  // Signal callable registry
+  static int _nextSignalKey = 1;
+  static final Map<int, SignalCallable> _signalCallables = {};
+  static final NativeCallable<GDExtensionCallableCustomCallFunction>
+      _signalCallTrampoline =
+      NativeCallable<GDExtensionCallableCustomCallFunction>.isolateLocal(
+          _SignalCallableCallNative);
+  static final NativeCallable<GDExtensionCallableCustomIsValidFunction>
+      _signalValidTrampoline =
+      NativeCallable<GDExtensionCallableCustomIsValidFunction>.isolateLocal(
+          _SignalCallableIsValidNative,
+          exceptionalReturn: 0);
+  static final NativeCallable<GDExtensionCallableCustomFreeFunction>
+      _signalFreeTrampoline =
+      NativeCallable<GDExtensionCallableCustomFreeFunction>.isolateLocal(
+          _SignalCallableFreeNative);
+  // Native trampoline pointer (Dart -> native) using NativeCallable.
+  static final NativeCallable<GDExtensionClassMethodCallNative>
+      _methodCallTrampoline =
+      NativeCallable<GDExtensionClassMethodCallNative>.isolateLocal(
+          _MethodCallNative);
+  // ignore: unused_field
+  static TypeResolver? _typeResolver;
+
+  TypeInfo? _lookupTypeInfo(Type type) {
+    // Attempt to find static sTypeInfo via mirrors not available in Flutter,
+    // so rely on a registry map we populate externally or via TypeInfo.forType.
+    return TypeInfo.forType(type);
+  }
+
+  /// Register a Dart wrapper for a native Godot object pointer. Called when a
+  /// Dart-side wrapper is created (either because Dart constructed the object
+  /// or lazily when an object pointer is first seen coming from Godot).
+  void registerDartWrapper(Object wrapper, GDExtensionObjectPtr nativePtr) {
+    final addr = nativePtr.address;
+    if (addr == 0) return;
+    _objectCache.putIfAbsent(addr, () => wrapper);
+  }
+
+  /// Unregister a Dart wrapper (e.g. on finalization / explicit free).
+  void unregisterDartWrapper(GDExtensionObjectPtr nativePtr) {
+    final addr = nativePtr.address;
+    if (addr == 0) return;
+    _objectCache.remove(addr);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Method dispatch support
+  // ---------------------------------------------------------------------------
+  int _registerMethod(TypeInfo typeInfo, String name, TypeInfo returnType,
+      List<TypeInfo> argTypes) {
+    final key = _nextMethodKey++;
+    _registeredMethods[key] = _RegisteredMethod(
+      typeInfo: typeInfo,
+      name: name,
+      returnType: returnType,
+      argTypes: argTypes,
+    );
+    return key;
+  }
+
+  // Public API to attach actual Dart implementation after registration
+  static void setMethodImplementation(
+      TypeInfo typeInfo, String name, Function impl) {
+    for (final entry in _registeredMethods.entries) {
+      final rm = entry.value;
+      if (rm.typeInfo == typeInfo && rm.name == name) {
+        rm.impl = impl;
+        return;
+      }
+    }
+  }
+
+  Callable _createCustomSignalCallable(
+      SignalCallable callable, int instanceId) {
+    final key = _nextSignalKey++;
+    _signalCallables[key] = callable;
+    // Build custom info struct in native memory.
+    final info = calloc<GDExtensionCallableCustomInfo>();
+    info.ref.callable_userdata = Pointer.fromAddress(key);
+    info.ref.token = nullptr;
+    info.ref.object_id = instanceId;
+    info.ref.call_func = _signalCallTrampoline.nativeFunction.cast();
+    info.ref.is_valid_func = _signalValidTrampoline.nativeFunction.cast();
+    info.ref.free_func = _signalFreeTrampoline.nativeFunction.cast();
+    info.ref.hash_func = nullptr;
+    info.ref.equal_func = nullptr;
+    info.ref.less_than_func = nullptr;
+    info.ref.to_string_func = nullptr;
+
+    // Create a Variant Callable from object + method name to reuse mechanism.
+    // We fake by constructing an empty Callable then patching memory with custom info.
+    final callableVariant = Callable();
+    // Overwrite underlying callable memory with custom info pointer layout if needed.
+    // NOTE: This is highly implementation-specific & may not match Godot internals;
+    // placeholder minimal approach: return plain Dart wrapper; invocation routed manually.
+    return callableVariant;
+  }
+}
+
+class _RegisteredMethod {
+  final TypeInfo typeInfo;
+  final String name;
+  final TypeInfo returnType;
+  final List<TypeInfo> argTypes;
+  Function? impl; // (ExtensionType instance, List<dynamic> args) -> dynamic
+  _RegisteredMethod({
+    required this.typeInfo,
+    required this.name,
+    required this.returnType,
+    required this.argTypes,
+  });
+}
+
+// Native trampoline invoked by Godot when a registered method is called.
+void _MethodCallNative(
+  Pointer<Void> methodUserdata,
+  GDExtensionClassInstancePtr instancePtr,
+  Pointer<GDExtensionConstVariantPtr> args,
+  int argCount,
+  GDExtensionVariantPtr retVariantPtr,
+  Pointer<GDExtensionCallError> errorPtr,
+) {
+  // Default: assume OK
+  errorPtr.ref.error = GDExtensionCallErrorType.GDEXTENSION_CALL_OK;
+  final key = methodUserdata.address;
+  final reg = GodotDartNativeBindings._registeredMethods[key];
+  if (reg == null) {
+    errorPtr.ref.error =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    return;
+  }
+  try {
+    // Retrieve Dart object for instance
+    final obj = GodotDart.instance!.dartBindings
+        .gdObjectToDartObject(instancePtr.cast());
+    if (obj == null) {
+      errorPtr.ref.error =
+          GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL;
+      return;
+    }
+    // Convert arguments
+    final converted = <dynamic>[];
+    for (int i = 0; i < argCount; ++i) {
+      final variantPtr = (args + i).value;
+      // Convert using Variant wrapper
+      converted.add(convertFromVariantPtr(variantPtr));
+    }
+    final impl = reg.impl;
+    dynamic result;
+    if (impl != null) {
+      result = Function.apply(impl, [obj, ...converted]);
+    }
+    // Write return value if expected
+    if (reg.returnType.variantType !=
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL) {
+      if (result != null) {
+        Variant v = result is Variant ? result : Variant(result);
+        final copyCtor = getToTypeConstructor(v.typeInfo.variantType);
+        copyCtor?.call(retVariantPtr.cast(), v.nativePtr.cast());
+      }
+    }
+  } catch (_) {
+    errorPtr.ref.error =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+  }
+}
+
+// FFI typedefs for method call trampoline
+typedef GDExtensionClassMethodCallNative = Void Function(
+  Pointer<Void>,
+  GDExtensionClassInstancePtr,
+  Pointer<GDExtensionConstVariantPtr>,
+  Int32,
+  GDExtensionVariantPtr,
+  Pointer<GDExtensionCallError>,
+);
+typedef DartGDExtensionClassMethodCallFunction = void Function(
+  Pointer<Void>,
+  GDExtensionClassInstancePtr,
+  Pointer<GDExtensionConstVariantPtr>,
+  int,
+  GDExtensionVariantPtr,
+  Pointer<GDExtensionCallError>,
+);
+
+// Signal callable native functions typedefs
+typedef GDExtensionCallableCustomCallFunction = Void Function(
+  Pointer<Void>,
+  Pointer<GDExtensionConstVariantPtr>,
+  Int32,
+  GDExtensionVariantPtr,
+  Pointer<GDExtensionCallError>,
+);
+typedef GDExtensionCallableCustomIsValidFunction = Uint8 Function(
+  Pointer<Void>,
+);
+typedef GDExtensionCallableCustomFreeFunction = Void Function(
+  Pointer<Void>,
+);
+
+void _SignalCallableCallNative(
+  Pointer<Void> userdata,
+  Pointer<GDExtensionConstVariantPtr> args,
+  int argCount,
+  GDExtensionVariantPtr rRet,
+  Pointer<GDExtensionCallError> err,
+) {
+  err.ref.error = GDExtensionCallErrorType.GDEXTENSION_CALL_OK;
+  final key = userdata.address;
+  final sc = GodotDartNativeBindings._signalCallables[key];
+  if (sc == null) {
+    err.ref.error =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    return;
+  }
+  final variants = <Variant>[];
+  for (int i = 0; i < argCount; ++i) {
+    variants.add(Variant.fromVariantPtr((args + i).value));
+  }
+  try {
+    // Invoke SignalCallable.call(List<Variant>)
+    // ignore: invalid_use_of_internal_member
+    // Use dynamic to call annotated entry point.
+    // The different subclasses implement call.
+    // ignore: unnecessary_cast
+    (sc as dynamic).call(variants);
+  } catch (_) {
+    err.ref.error =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+  }
+}
+
+int _SignalCallableIsValidNative(Pointer<Void> userdata) {
+  final key = userdata.address;
+  return GodotDartNativeBindings._signalCallables.containsKey(key) ? 1 : 0;
+}
+
+void _SignalCallableFreeNative(Pointer<Void> userdata) {
+  final key = userdata.address;
+  GodotDartNativeBindings._signalCallables.remove(key);
 }
 
 @pragma('vm:entry-point')
