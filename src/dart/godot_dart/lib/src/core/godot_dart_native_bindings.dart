@@ -13,27 +13,38 @@ import 'gdextension.dart';
 typedef ScriptResolver = Type? Function(String scriptPath);
 
 class GodotDartNativeBindings {
-  late final DynamicLibrary processLib;
+  // ---------------------------------------------------------------------------
+  // Pure Dart replacements for former C++ exported functions.
+  // ---------------------------------------------------------------------------
+  // Each Variant / Builtin / ExtensionType stores a Godot-side allocation.
+  // The native finalizers expect an FFI function pointer of type
+  // void Function(void*). We create a static NativeCallable for each.
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeVariant =
+    _finalizeVariantTrampoline.nativeFunction;
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeBuiltinObject =
+    _finalizeBuiltinObjectTrampoline.nativeFunction;
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeExtensionObject =
+    _finalizeExtensionObjectTrampoline.nativeFunction;
 
-  late final finalizeVariant = processLib
-      .lookup<NativeFunction<Void Function(Pointer<Void>)>>('finalize_variant');
+  // Script instance helpers (no longer provided by native layer). These are
+  // stubbed; script instances are not yet purely managed in Dart. Returning
+  // null pointers keeps existing logic safe (it falls back to binding lookup).
+  Object? Function(Pointer<Void>) objectFromScriptInstance = (_) => null;
 
-  late final finalizeBuiltinObject =
-      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-          'finalize_builtin_object');
+  // Persistent handle creation. In pure Dart we can leverage Isolate API.
+  // We store a Dart object inside a map and hand out an opaque pointer-sized
+  // integer key encoded as Pointer<Void> (address field). This mimics a native
+  // persistent handle sufficiently for existing usage (only passed back to
+  // Dart finalizers / lookups).
+  final Map<int, Object> _persistentHandleTable = {};
+  int _nextPersistentHandleId = 1;
+  Pointer<Void> _safeNewPersistentHandle(Object obj) {
+    final id = _nextPersistentHandleId++;
+    _persistentHandleTable[id] = obj;
+    return Pointer.fromAddress(id);
+  }
+  // (Lookup / removal helpers could be added later if needed.)
 
-  late final finalizeExtensionObject =
-      processLib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-          'finalize_extension_object');
-  late final objectFromScriptInstance = processLib
-      .lookup<NativeFunction<Handle Function(Pointer<Void>)>>(
-          'object_from_script_instance')
-      .asFunction<Object? Function(Pointer<Void>)>();
-
-  late final _safeNewPersistentHandle = processLib
-      .lookup<NativeFunction<Pointer<Void> Function(Handle)>>(
-          'safe_new_persistent_handle')
-      .asFunction<Pointer<Void> Function(Object)>();
   // Replaced native implementations with pure Dart shims below.
   void tieDartToNative(Object obj, GDExtensionObjectPtr nativePtr, bool isRef,
       bool isGodotType) {
@@ -52,12 +63,15 @@ class GodotDartNativeBindings {
   Object createSignalCallable(SignalCallable callable, int instanceId) =>
       _createCustomSignalCallable(callable, instanceId);
 
-  GodotDartNativeBindings() {
-    processLib = DynamicLibrary.process();
-  }
+  GodotDartNativeBindings();
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::print')
-  external void printNative(String s);
+  // Pure Dart replacement for native print hook.
+  void printNative(String s) {
+    // Route to standard print for now.
+    // Could add Godot console logging via variant call if desired.
+    // ignore: avoid_print
+    print('[godot_dart] $s');
+  }
 
   // Pure Dart binding registration. Only supports registering classes that
   // already have a static TypeInfo (sTypeInfo) on them.
@@ -194,9 +208,7 @@ class GodotDartNativeBindings {
     }
   }
 
-  @pragma('vm:external-name', 'GodotDartNativeBindings::gdObjectToDartObject')
-  // Pure Dart reimplementation: returns the previously registered Dart
-  // wrapper for a Godot object pointer, or null if unknown.
+  // Returns the previously registered Dart wrapper for a Godot object pointer, or null if unknown.
   Object? gdObjectToDartObject(GDExtensionObjectPtr object) {
     final addr = object.address;
     if (addr == 0) return null;
@@ -210,9 +222,7 @@ class GodotDartNativeBindings {
     _typeResolver = resolver;
   }
 
-  Pointer<Void> toPersistentHandle(Object instance) {
-    return _safeNewPersistentHandle(instance);
-  }
+  Pointer<Void> toPersistentHandle(Object instance) => _safeNewPersistentHandle(instance);
 
   // ---------------------------------------------------------------------------
   // Object registration (replacement for former native instance binding lookup)
@@ -388,6 +398,55 @@ void _MethodCallNative(
         GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Finalizer trampolines (Variant / Builtin / Extension object cleanup)
+// ---------------------------------------------------------------------------
+typedef _VoidPtrFnNative = Void Function(Pointer<Void>);
+
+// Variant finalizer: expects pointer to variant memory previously allocated
+// via gde_mem_alloc and constructed. We call destroy then free.
+void _finalizeVariant(Pointer<Void> variantPtr) {
+  if (variantPtr == nullptr) return;
+  try {
+    gde.ffiBindings.gde_variant_destroy(variantPtr.cast());
+    gde.ffiBindings.gde_mem_free(variantPtr);
+  } catch (_) {
+    // Swallow; finalizers must not throw.
+  }
+}
+
+void _finalizeBuiltinObject(Pointer<Void> builtinOpaquePtr) {
+  if (builtinOpaquePtr == nullptr) return;
+  try {
+    // Layout: [GDExtensionPtrDestructor][object bytes...]
+    final destructorPtr = builtinOpaquePtr.cast<GDExtensionPtrDestructor>();
+  final destructor = destructorPtr.value;
+  if (destructor != nullptr) {
+      // Compute region after function pointer.
+      final objectRegion = builtinOpaquePtr.cast<Uint8>().elementAt(sizeOf<GDExtensionPtrDestructor>());
+      // Call user provided destructor on the trailing bytes.
+      try {
+    final destructorFn = destructor.asFunction<void Function(Pointer<Void>)>();
+        destructorFn(objectRegion.cast());
+      } catch (_) {
+        // Ignore errors during user destructor call.
+      }
+    }
+    gde.ffiBindings.gde_mem_free(builtinOpaquePtr);
+  } catch (_) {}
+}
+
+void _finalizeExtensionObject(Pointer<Void> extensionObjectPtr) {
+  if (extensionObjectPtr == nullptr) return;
+  try {
+    gde.ffiBindings.gde_object_destroy(extensionObjectPtr.cast());
+  } catch (_) {}
+}
+
+final _finalizeVariantTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeVariant);
+final _finalizeBuiltinObjectTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeBuiltinObject);
+final _finalizeExtensionObjectTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeExtensionObject);
 
 // FFI typedefs for method call trampoline
 typedef GDExtensionClassMethodCallNative = Void Function(

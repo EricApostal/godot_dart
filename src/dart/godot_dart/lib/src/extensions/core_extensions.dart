@@ -15,8 +15,11 @@ extension TNode on Node {
     final GDString name;
     if (path != null) {
       name = GDString.fromString(path);
+    } else if (typeInfo != null) {
+      name = GDString.fromStringName(typeInfo!.className);
     } else {
-      name = GDString.fromStringName(typeInfo.className);
+      print('Null type but probably shouldn\'t be!');
+      return null;
     }
     var node = getNode(NodePath.fromGDString(name));
     return node?.as<T>();
