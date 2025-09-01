@@ -7,7 +7,9 @@ import 'src/core/gdextension.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
 import 'src/core/type_info.dart';
 import 'src/extensions/async_extensions.dart';
+import 'src/gen/engine_classes.dart';
 import 'src/gen/utility_functions.dart';
+import 'src/reloader/hot_reloader.dart';
 import 'src/variant/variant.dart';
 
 export 'src/annotations/godot_script.dart';
@@ -29,17 +31,27 @@ export 'src/variant/variant.dart' hide getToTypeConstructor;
 
 // ignore: unused_element
 late GodotDart _globalExtension;
+HotReloader? _reloader;
 // ignore: unused_element
 bool _isReloading = false;
 
-void registerGodot(int extensionPointer, int bindingCallbacksPointer) {
+@pragma('vm:entry-point')
+void _reloadCode() async {
+  _isReloading = true;
+  var result = await _reloader?.reloadCode();
+  print('[godot_dart] Hot reload result: $result');
+  _isReloading = false;
+}
+
+@pragma('vm:entry-point')
+void _registerGodot(int extensionToken, int bindingCallbacks) {
   final godotDart = DynamicLibrary.process();
   final ffiInterface = GDExtensionFFI(godotDart);
 
-  final extensionPtr = GDExtensionClassLibraryPtr.fromAddress(extensionPointer);
+  final extensionPtr = GDExtensionClassLibraryPtr.fromAddress(extensionToken);
   final bindingCallbackPtr =
       Pointer<GDExtensionInstanceBindingCallbacks>.fromAddress(
-          bindingCallbacksPointer);
+          bindingCallbacks);
   // TODO: Assert everything is how we expect.
   _globalExtension = GodotDart(ffiInterface, extensionPtr, bindingCallbackPtr);
 
@@ -50,7 +62,18 @@ void registerGodot(int extensionPointer, int bindingCallbacksPointer) {
   SignalAwaiter.bind();
   CallbackAwaiter.bind();
 
+  if (Engine.singleton.isEditorHint()) {
+    Future.microtask(() async {
+      _reloader = await HotReloader.create();
+    });
+  }
+
   print('[godot_dart] Everything loaded a-ok!');
+}
+
+@pragma('vm:entry-point')
+void _unregisterGodot() {
+  _reloader?.stop();
 }
 
 typedef PrintClosure = void Function(String line);
