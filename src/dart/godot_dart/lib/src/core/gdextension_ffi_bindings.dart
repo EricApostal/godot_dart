@@ -47,7 +47,7 @@ class GDExtensionFFI {
   late final _gde_get_library_pathPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(GDExtensionClassLibraryPtr,
-              GDExtensionUninitializedStringPtr)>>('gde_get_library_path');
+              GDExtensionUninitializedStringPtr)>>('get_library_path');
   late final _gde_get_library_path = _gde_get_library_pathPtr.asFunction<
       void Function(
           GDExtensionClassLibraryPtr, GDExtensionUninitializedStringPtr)>();

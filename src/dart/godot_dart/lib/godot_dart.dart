@@ -28,6 +28,8 @@ export 'src/gen/utility_functions.dart';
 export 'src/gen/builtins.dart';
 export 'src/gen/native_structures.dart';
 export 'src/variant/variant.dart' hide getToTypeConstructor;
+export 'src/core/gdextension_ffi_bindings.dart'
+    hide GDExtensionInitializationLevel;
 
 // ignore: unused_element
 late GodotDart _globalExtension;
