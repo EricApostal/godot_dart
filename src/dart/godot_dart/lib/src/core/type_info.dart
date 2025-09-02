@@ -134,38 +134,40 @@ class TypeInfo {
         Pointer<void>, // Not sure if this is right.
         StringName.fromString('void'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL.value,
       ),
       bool: TypeInfo(
         bool,
         StringName.fromString('bool'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL.value,
       ),
       int: TypeInfo(
         int,
         StringName.fromString('int'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT.value,
       ),
       double: TypeInfo(
         double,
         StringName.fromString('double'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT,
+        variantType:
+            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT.value,
       ),
       String: TypeInfo(
         String,
         StringName.fromString('String'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING,
+        variantType:
+            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING.value,
       ),
       Variant: TypeInfo(
         Variant,
         StringName.fromString('Variant'),
         StringName.fromString('Variant'),
         variantType:
-            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX.value,
       )
     };
   }

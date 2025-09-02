@@ -32,7 +32,7 @@ Map<int, BuiltinConstructor> _dartBuiltinConstructors = {};
 
 void initVariantBindings(GDExtensionFFI ffIinterface) {
   _fromTypeConstructor = List.generate(
-    GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+    GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX.value,
     (variantType) {
       if (variantType == 0) {
         return null;
@@ -43,7 +43,7 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
     },
   );
   _toTypeConstructor = List.generate(
-    GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+    GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX.value,
     (variantType) {
       if (variantType == 0) {
         return null;
@@ -166,7 +166,8 @@ class Variant implements Finalizable {
     Variant,
     StringName.fromString('Variant'),
     StringName.fromString('Variant'),
-    variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
+    variantType:
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX.value,
     size: _size,
   );
 
@@ -227,7 +228,7 @@ class Variant implements Finalizable {
       Pointer<GDExtensionVariantPtr> ptrToObj = malloc<GDExtensionVariantPtr>();
       ptrToObj.value = obj.nativePtr;
       final c = _fromTypeConstructor[
-          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT.value];
       c!.call(nativePtr.cast(), ptrToObj.cast());
       malloc.free(ptrToObj);
     } else if (obj is Variant) {
@@ -238,7 +239,7 @@ class Variant implements Finalizable {
       // pointer to a Godot object.
       // TODO: Try to find a way to remove this to prevent abuse.
       final c = _fromTypeConstructor[
-          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT];
+          GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT.value];
       c!.call(nativePtr.cast(), obj.cast());
     } else if (obj is BuiltinType) {
       // Builtin type
@@ -254,34 +255,34 @@ class Variant implements Finalizable {
                 arena.allocate<GDExtensionBool>(sizeOf<GDExtensionBool>());
             b.value = obj ? 1 : 0;
             final c = _fromTypeConstructor[
-                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL];
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL.value];
             c!(nativePtr.cast(), b.cast());
             break;
           case final Enum obj:
             final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
             i.value = obj.index;
             final c = _fromTypeConstructor[
-                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT.value];
             c!(nativePtr.cast(), i.cast());
             break;
           case final int obj:
             final i = arena.allocate<GDExtensionInt>(sizeOf<GDExtensionInt>());
             i.value = obj;
             final c = _fromTypeConstructor[
-                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT];
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT.value];
             c!(nativePtr.cast(), i.cast());
             break;
           case final double obj:
             final d = arena.allocate<Double>(sizeOf<Double>());
             d.value = obj;
             final c = _fromTypeConstructor[
-                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT];
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT.value];
             c!(nativePtr.cast(), d.cast());
             break;
           case final String obj:
             final gdString = GDString.fromString(obj);
             final c = _fromTypeConstructor[
-                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING];
+                GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING.value];
             c!(nativePtr.cast(), gdString.nativePtr.cast());
             break;
           case final Future<void> _:
@@ -309,7 +310,8 @@ class Variant implements Finalizable {
 Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
   Object? ret;
 
-  int variantType = gde.ffiBindings.gde_variant_get_type(variantPtr.cast());
+  GDExtensionVariantType variantType =
+      gde.ffiBindings.gde_variant_get_type(variantPtr.cast());
   void Function(GDExtensionTypePtr, GDExtensionVariantPtr)? c;
   if (variantType > 0 && variantType < _toTypeConstructor.length) {
     c = _toTypeConstructor[variantType];

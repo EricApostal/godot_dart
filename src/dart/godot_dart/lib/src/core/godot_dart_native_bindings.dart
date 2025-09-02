@@ -19,12 +19,13 @@ class GodotDartNativeBindings {
   // Each Variant / Builtin / ExtensionType stores a Godot-side allocation.
   // The native finalizers expect an FFI function pointer of type
   // void Function(void*). We create a static NativeCallable for each.
-  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeVariant =
-    _finalizeVariantTrampoline.nativeFunction;
-  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeBuiltinObject =
-    _finalizeBuiltinObjectTrampoline.nativeFunction;
-  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>> finalizeExtensionObject =
-    _finalizeExtensionObjectTrampoline.nativeFunction;
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>>
+      finalizeVariant = _finalizeVariantTrampoline.nativeFunction;
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>>
+      finalizeBuiltinObject = _finalizeBuiltinObjectTrampoline.nativeFunction;
+  late final Pointer<NativeFunction<Void Function(Pointer<Void>)>>
+      finalizeExtensionObject =
+      _finalizeExtensionObjectTrampoline.nativeFunction;
 
   // Script instance helpers (no longer provided by native layer). These are
   // stubbed; script instances are not yet purely managed in Dart. Returning
@@ -222,7 +223,8 @@ class GodotDartNativeBindings {
     _typeResolver = resolver;
   }
 
-  Pointer<Void> toPersistentHandle(Object instance) => _safeNewPersistentHandle(instance);
+  Pointer<Void> toPersistentHandle(Object instance) =>
+      _safeNewPersistentHandle(instance);
 
   // ---------------------------------------------------------------------------
   // Object registration (replacement for former native instance binding lookup)
@@ -421,13 +423,16 @@ void _finalizeBuiltinObject(Pointer<Void> builtinOpaquePtr) {
   try {
     // Layout: [GDExtensionPtrDestructor][object bytes...]
     final destructorPtr = builtinOpaquePtr.cast<GDExtensionPtrDestructor>();
-  final destructor = destructorPtr.value;
-  if (destructor != nullptr) {
+    final destructor = destructorPtr.value;
+    if (destructor != nullptr) {
       // Compute region after function pointer.
-      final objectRegion = builtinOpaquePtr.cast<Uint8>().elementAt(sizeOf<GDExtensionPtrDestructor>());
+      final objectRegion = builtinOpaquePtr
+          .cast<Uint8>()
+          .elementAt(sizeOf<GDExtensionPtrDestructor>());
       // Call user provided destructor on the trailing bytes.
       try {
-    final destructorFn = destructor.asFunction<void Function(Pointer<Void>)>();
+        final destructorFn =
+            destructor.asFunction<void Function(Pointer<Void>)>();
         destructorFn(objectRegion.cast());
       } catch (_) {
         // Ignore errors during user destructor call.
@@ -444,9 +449,12 @@ void _finalizeExtensionObject(Pointer<Void> extensionObjectPtr) {
   } catch (_) {}
 }
 
-final _finalizeVariantTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeVariant);
-final _finalizeBuiltinObjectTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeBuiltinObject);
-final _finalizeExtensionObjectTrampoline = NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeExtensionObject);
+final _finalizeVariantTrampoline =
+    NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeVariant);
+final _finalizeBuiltinObjectTrampoline =
+    NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeBuiltinObject);
+final _finalizeExtensionObjectTrampoline =
+    NativeCallable<_VoidPtrFnNative>.isolateLocal(_finalizeExtensionObject);
 
 // FFI typedefs for method call trampoline
 typedef GDExtensionClassMethodCallNative = Void Function(
