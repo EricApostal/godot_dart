@@ -90,7 +90,7 @@ class Vector3 extends BuiltinType {
       : super.nonFinalized() {
     allocateOpaque(sTypeInfo.size, null);
     final c = getToTypeConstructor(
-        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3);
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3.value);
     if (c == null) return;
 
     c(nativeDataPtr.cast(), variantPtr);

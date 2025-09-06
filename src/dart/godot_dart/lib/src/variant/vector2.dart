@@ -100,7 +100,7 @@ class Vector2 extends BuiltinType {
       : super.nonFinalized() {
     allocateOpaque(sTypeInfo.size, null);
     final c = getToTypeConstructor(
-        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2);
+        GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR2.value);
     if (c == null) return;
 
     c(nativeDataPtr.cast(), variantPtr);

@@ -373,6 +373,8 @@ Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
     c = _toTypeConstructor[variantTypeIndex];
   }
 
+  final variantType = GDExtensionVariantType.fromValue(variantTypeIndex);
+
   if (c == null) {
     // TODO: Output an error message
     return null;
@@ -387,36 +389,36 @@ Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
 
   // Else, it's probably a dart native type
   ret = using((arena) {
-    switch (variantTypeIndex) {
+    switch (variantType) {
       // Built-in types
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL:
         Pointer<GDExtensionBool> ptr =
             arena.allocate(sizeOf<GDExtensionBool>());
         c!(ptr.cast(), variantPtr);
         return ptr.value != 0;
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT:
         Pointer<GDExtensionInt> ptr = arena.allocate(sizeOf<GDExtensionInt>());
         c!(ptr.cast(), variantPtr);
         return ptr.value;
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT:
         Pointer<Double> ptr = arena.allocate(sizeOf<Double>());
         c!(ptr.cast(), variantPtr);
         return ptr.value;
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING_NAME.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING_NAME:
         var gdStringName = StringName();
         c!(gdStringName.nativePtr.cast(), variantPtr);
         return gdStringName.toDartString();
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING:
         var gdString = GDString();
         c!(gdString.nativePtr.cast(), variantPtr);
         return gdString.toDartString();
 
       // Or a hand-implemented object
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VECTOR3:
         return Vector3.fromVariantPtr(variantPtr);
 
       // Or a wrapped object
-      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT.value:
+      case GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT:
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
