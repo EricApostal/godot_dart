@@ -90,7 +90,7 @@ void writeReturnRead(ArgumentProxy returnType, CodeSink o) {
     case TypeCategory.engineClass:
       final question = returnType.isOptional ? '?' : '';
       if (returnType.isRefCounted) {
-        o.p('final realObj = gde.ffiBindings.gde_ref_get_object(retPtr.cast());');
+        o.p('final realObj = getRefGetObject()(retPtr.cast());');
         o.p('final retVal = gde.dartBindings.gdObjectToDartObject(realObj.cast()) as ${returnType.rawDartType}$question;');
         // Need to unreference the Ref<T> as its destructor is never called
         o.p('retVal$question.unreference();');
@@ -534,7 +534,7 @@ void convertPtrArgumentToDart(
     case TypeCategory.engineClass:
       final question = argument.isOptional ? '?' : '';
       if (argument.isRefCounted) {
-        o.p('$decl = gde.dartBindings.gdObjectToDartObject(gde.ffiBindings.gde_ref_get_object($argumentName.value)) as ${argument.rawDartType}$question;');
+        o.p('$decl = gde.dartBindings.gdObjectToDartObject(getRefGetObject()($argumentName.value)) as ${argument.rawDartType}$question;');
       } else {
         o.p('$decl = gde.dartBindings.gdObjectToDartObject($argumentName.cast<Pointer<Pointer<Void>>>().value.value) as ${argument.rawDartType}$question;');
       }

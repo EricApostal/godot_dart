@@ -17,6 +17,7 @@ import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../core/core_types.dart';
+import '../core/native_resolver.dart';
 import '../core/signals.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/gdextension.dart';
@@ -239,7 +240,7 @@ void _generatePtrcallMethod(CodeSink o, ClassMethod method) {
       writeReturnAllocation(returnInfo, o);
     }
 
-    o.p('gde.ffiBindings.gde_object_method_bind_ptrcall(');
+    o.p('getObjectMethodBindPtrcall()(');
     o.p('  _bindings.method${methodName.toUpperCamelCase()}, ${method.isStatic ? 'nullptr.cast()' : 'nativePtr.cast()'}, $argumentsVar, ${hasReturn ? 'retPtr' : 'nullptr'}.cast());');
 
     if (hasReturn) {

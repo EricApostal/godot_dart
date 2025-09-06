@@ -96,6 +96,8 @@ Future<void> generateUtilityFunctions(
   o.nl();
   o.p("import '../core/gdextension_ffi_bindings.dart';");
   o.p("import '../core/gdextension.dart';");
+  o.p("import '../core/native_resolver.dart';");
+
   o.p("import '../variant/variant.dart';");
   o.p("import 'engine_classes.dart';");
   o.p("import 'builtins.dart';");
@@ -140,7 +142,7 @@ Future<void> generateUtilityFunctions(
       o.p('final ffi = gde.ffiBindings;');
       for (final utilityFunction in apiInfo.api.utilityFunctions) {
         final name = utilityFunction.name;
-        o.p("_bindings.${name}Func = ffi.gde_variant_get_ptr_utility_function(StringName.fromString('$name').nativePtr.cast(), ${utilityFunction.hash});");
+        o.p("_bindings.${name}Func = variantGetPtrUtilityFunction()(StringName.fromString('$name').nativePtr.cast(), ${utilityFunction.hash});");
       }
     }, '}');
   }, '}');

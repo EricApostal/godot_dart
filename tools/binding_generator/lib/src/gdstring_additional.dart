@@ -9,7 +9,7 @@ void gdStringFromString(CodeSink o) {
   o.b('GDString.fromString(String string)', () {
     o.p('  : super(_size, _bindings.destructor) {');
     o.p('final native = string.toNativeUtf8();');
-    o.p('gde.ffiBindings.gde_string_new_with_utf8_chars(nativePtr.cast(), native.cast());');
+    o.p('getStringWithNewUtf8Chars()(nativePtr.cast(), native.cast());');
     o.nl();
 
     o.p('malloc.free(native);');

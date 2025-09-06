@@ -17,6 +17,7 @@ import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
 import '../core/core_types.dart';
+import '../core/native_resolver.dart';
 import '../core/gdextension_ffi_bindings.dart';
 import '../core/gdextension.dart';
 import '../core/type_info.dart';
