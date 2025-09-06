@@ -103,7 +103,7 @@ class TypeInfo {
   /// The Variant type of this class. This is set to
   /// [GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_OBJECT] by default which
   /// is usually correct for most user created classes
-  final int variantType;
+  final GDExtensionVariantType variantType;
 
   /// The size of the variant type. Zero for non-variants
   final int size;
@@ -134,40 +134,38 @@ class TypeInfo {
         Pointer<void>, // Not sure if this is right.
         StringName.fromString('void'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL.value,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL,
       ),
       bool: TypeInfo(
         bool,
         StringName.fromString('bool'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL.value,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_BOOL,
       ),
       int: TypeInfo(
         int,
         StringName.fromString('int'),
         StringName(),
-        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT.value,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_INT,
       ),
       double: TypeInfo(
         double,
         StringName.fromString('double'),
         StringName(),
-        variantType:
-            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT.value,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_FLOAT,
       ),
       String: TypeInfo(
         String,
         StringName.fromString('String'),
         StringName(),
-        variantType:
-            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING.value,
+        variantType: GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_STRING,
       ),
       Variant: TypeInfo(
         Variant,
         StringName.fromString('Variant'),
         StringName.fromString('Variant'),
         variantType:
-            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX.value,
+            GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_VARIANT_MAX,
       )
     };
   }

@@ -43,8 +43,13 @@ abstract class BuiltinType implements Finalizable {
   @protected
   Pointer<Uint8> allocateOpaque(
       int size, GDExtensionPtrDestructor? destructor) {
-    _opaque =
-        gde.ffiBindings.gde_mem_alloc(GodotDart.destructorSize + size).cast();
+    final lib = DynamicLibrary.process();
+    final allocator = lib
+        .lookup<NativeFunction<GDExtensionInterfaceMemAllocFunction>>(
+            'object_method_bind_call')
+        .asFunction<DartGDExtensionInterfaceMemAllocFunction>();
+
+    _opaque = allocator(GodotDart.destructorSize + size).cast();
     _opaque.cast<GDExtensionPtrDestructor>().value = destructor ?? nullptr;
     return _opaque + GodotDart.destructorSize;
   }

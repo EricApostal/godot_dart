@@ -101,8 +101,27 @@ class GodotDartNativeBindings {
       final lib = gde.extensionToken;
       final className = typeInfo.className.nativePtr.cast<Void>();
       final parentName = typeInfo.nativeTypeName.nativePtr.cast<Void>();
-      gde.ffiBindings.gde_classdb_register_extension_class2(
-          lib, className, parentName, info);
+      _classdbRegisterExtensionClass2 ??= () {
+        final libdl = DynamicLibrary.process();
+        try {
+          return libdl
+              .lookup<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClass2Function>>(
+                  'classdb_register_extension_class2')
+              .asFunction<
+                  DartGDExtensionInterfaceClassdbRegisterExtensionClass2Function>();
+        } catch (_) {
+          final ptrVar = libdl.lookup<
+                  Pointer<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClass2Function>>>(
+              'gdextension_interface_classdb_register_extension_class2');
+          return ptrVar.value.asFunction<
+              DartGDExtensionInterfaceClassdbRegisterExtensionClass2Function>();
+        }
+      }();
+      _classdbRegisterExtensionClass2!(lib, className, parentName, info.cast());
     });
   }
 
@@ -110,7 +129,7 @@ class GodotDartNativeBindings {
     using((arena) {
       final info = arena
           .allocate<GDExtensionPropertyInfo>(sizeOf<GDExtensionPropertyInfo>());
-      info.ref.type = propertyInfo.typeInfo.variantType;
+      info.ref.typeAsInt = propertyInfo.typeInfo.variantType.value;
       info.ref.name =
           StringName.fromString(propertyInfo.name).nativePtr.cast<Void>();
       info.ref.class_name =
@@ -124,12 +143,33 @@ class GodotDartNativeBindings {
       info.ref.usage = propertyInfo.flags;
 
       // For now we don't expose custom getter/setter, leave null will default to script
-      gde.ffiBindings.gde_classdb_register_extension_class_property(
-          gde.extensionToken,
-          typeInfo.className.nativePtr.cast<Void>(),
-          info,
-          nullptr.cast(),
-          nullptr.cast());
+      _classdbRegisterExtensionClassProperty ??= () {
+        final libdl = DynamicLibrary.process();
+        try {
+          return libdl
+              .lookup<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClassPropertyFunction>>(
+                  'classdb_register_extension_class_property')
+              .asFunction<
+                  DartGDExtensionInterfaceClassdbRegisterExtensionClassPropertyFunction>();
+        } catch (_) {
+          final ptrVar = libdl.lookup<
+                  Pointer<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClassPropertyFunction>>>(
+              'gdextension_interface_classdb_register_extension_class_property');
+          return ptrVar.value.asFunction<
+              DartGDExtensionInterfaceClassdbRegisterExtensionClassPropertyFunction>();
+        }
+      }();
+      _classdbRegisterExtensionClassProperty!(
+        gde.extensionToken,
+        typeInfo.className.nativePtr.cast<Void>(),
+        info,
+        nullptr.cast(),
+        nullptr.cast(),
+      );
     });
   }
 
@@ -151,7 +191,7 @@ class GodotDartNativeBindings {
       methodInfo.ref.call_func = _methodCallTrampoline.nativeFunction.cast();
       methodInfo.ref.ptrcall_func = nullptr; // ptrcall not implemented yet
       methodInfo.ref.method_flags =
-          GDExtensionClassMethodFlags.GDEXTENSION_METHOD_FLAG_NORMAL;
+          GDExtensionClassMethodFlags.GDEXTENSION_METHOD_FLAG_NORMAL.value;
       methodInfo.ref.has_return_value = returnType.variantType !=
               GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL
           ? 1
@@ -160,7 +200,7 @@ class GodotDartNativeBindings {
       if (methodInfo.ref.has_return_value != 0) {
         final retInfo = arena.allocate<GDExtensionPropertyInfo>(
             sizeOf<GDExtensionPropertyInfo>());
-        retInfo.ref.type = returnType.variantType;
+        retInfo.ref.typeAsInt = returnType.variantType.value;
         retInfo.ref.name = returnType.className.nativePtr.cast<Void>();
         retInfo.ref.class_name =
             returnType.nativeTypeName.nativePtr.cast<Void>();
@@ -178,7 +218,7 @@ class GodotDartNativeBindings {
             sizeOf<GDExtensionPropertyInfo>() * argc);
         for (int i = 0; i < argc; ++i) {
           final a = (argsArray + i);
-          a.ref.type = argTypes[i].variantType;
+          a.ref.typeAsInt = argTypes[i].variantType.value;
           a.ref.name = argTypes[i].className.nativePtr.cast<Void>();
           a.ref.class_name = argTypes[i].nativeTypeName.nativePtr.cast<Void>();
           a.ref.hint = 0;
@@ -188,10 +228,31 @@ class GodotDartNativeBindings {
         methodInfo.ref.arguments_info = argsArray;
       }
 
-      gde.ffiBindings.gde_classdb_register_extension_class_method(
-          gde.extensionToken,
-          typeInfo.className.nativePtr.cast<Void>(),
-          methodInfo);
+      _classdbRegisterExtensionClassMethod ??= () {
+        final libdl = DynamicLibrary.process();
+        try {
+          return libdl
+              .lookup<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClassMethodFunction>>(
+                  'classdb_register_extension_class_method')
+              .asFunction<
+                  DartGDExtensionInterfaceClassdbRegisterExtensionClassMethodFunction>();
+        } catch (_) {
+          final ptrVar = libdl.lookup<
+                  Pointer<
+                      NativeFunction<
+                          GDExtensionInterfaceClassdbRegisterExtensionClassMethodFunction>>>(
+              'gdextension_interface_classdb_register_extension_class_method');
+          return ptrVar.value.asFunction<
+              DartGDExtensionInterfaceClassdbRegisterExtensionClassMethodFunction>();
+        }
+      }();
+      _classdbRegisterExtensionClassMethod!(
+        gde.extensionToken,
+        typeInfo.className.nativePtr.cast<Void>(),
+        methodInfo,
+      );
     });
   }
 
@@ -201,8 +262,27 @@ class GodotDartNativeBindings {
     const int bufSize = 1024; // TODO: grow if needed.
     final buffer = calloc<Char>(bufSize);
     try {
-      final written = gde.ffiBindings.gde_string_to_utf8_chars(
-          string.nativePtr.cast<Void>(), buffer, bufSize);
+      _stringToUtf8Chars ??= () {
+        final libdl = DynamicLibrary.process();
+        try {
+          return libdl
+              .lookup<
+                      NativeFunction<
+                          GDExtensionInterfaceStringToUtf8CharsFunction>>(
+                  'string_to_utf8_chars')
+              .asFunction<DartGDExtensionInterfaceStringToUtf8CharsFunction>();
+        } catch (_) {
+          final ptrVar = libdl.lookup<
+                  Pointer<
+                      NativeFunction<
+                          GDExtensionInterfaceStringToUtf8CharsFunction>>>(
+              'gdextension_interface_string_to_utf8_chars');
+          return ptrVar.value
+              .asFunction<DartGDExtensionInterfaceStringToUtf8CharsFunction>();
+        }
+      }();
+      final written =
+          _stringToUtf8Chars!(string.nativePtr.cast<Void>(), buffer, bufSize);
       return buffer.cast<Utf8>().toDartString(length: written);
     } finally {
       calloc.free(buffer);
@@ -357,12 +437,12 @@ void _MethodCallNative(
   Pointer<GDExtensionCallError> errorPtr,
 ) {
   // Default: assume OK
-  errorPtr.ref.error = GDExtensionCallErrorType.GDEXTENSION_CALL_OK;
+  errorPtr.ref.errorAsInt = GDExtensionCallErrorType.GDEXTENSION_CALL_OK.value;
   final key = methodUserdata.address;
   final reg = GodotDartNativeBindings._registeredMethods[key];
   if (reg == null) {
-    errorPtr.ref.error =
-        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    errorPtr.ref.errorAsInt =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD.value;
     return;
   }
   try {
@@ -370,8 +450,8 @@ void _MethodCallNative(
     final obj = GodotDart.instance!.dartBindings
         .gdObjectToDartObject(instancePtr.cast());
     if (obj == null) {
-      errorPtr.ref.error =
-          GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL;
+      errorPtr.ref.errorAsInt = GDExtensionCallErrorType
+          .GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL.value;
       return;
     }
     // Convert arguments
@@ -391,13 +471,13 @@ void _MethodCallNative(
         GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_NIL) {
       if (result != null) {
         Variant v = result is Variant ? result : Variant(result);
-        final copyCtor = getToTypeConstructor(v.typeInfo.variantType);
+        final copyCtor = getToTypeConstructor(v.typeInfo.variantType.value);
         copyCtor?.call(retVariantPtr.cast(), v.nativePtr.cast());
       }
     }
   } catch (_) {
-    errorPtr.ref.error =
-        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    errorPtr.ref.errorAsInt =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD.value;
   }
 }
 
@@ -411,8 +491,40 @@ typedef _VoidPtrFnNative = Void Function(Pointer<Void>);
 void _finalizeVariant(Pointer<Void> variantPtr) {
   if (variantPtr == nullptr) return;
   try {
-    gde.ffiBindings.gde_variant_destroy(variantPtr.cast());
-    gde.ffiBindings.gde_mem_free(variantPtr);
+    _variantDestroy ??= () {
+      final libdl = DynamicLibrary.process();
+      try {
+        return libdl
+            .lookup<NativeFunction<GDExtensionInterfaceVariantDestroyFunction>>(
+                'variant_destroy')
+            .asFunction<DartGDExtensionInterfaceVariantDestroyFunction>();
+      } catch (_) {
+        final ptrVar = libdl.lookup<
+                Pointer<
+                    NativeFunction<
+                        GDExtensionInterfaceVariantDestroyFunction>>>(
+            'gdextension_interface_variant_destroy');
+        return ptrVar.value
+            .asFunction<DartGDExtensionInterfaceVariantDestroyFunction>();
+      }
+    }();
+    _memFree ??= () {
+      final libdl = DynamicLibrary.process();
+      try {
+        return libdl
+            .lookup<NativeFunction<GDExtensionInterfaceMemFreeFunction>>(
+                'mem_free')
+            .asFunction<DartGDExtensionInterfaceMemFreeFunction>();
+      } catch (_) {
+        final ptrVar = libdl.lookup<
+                Pointer<NativeFunction<GDExtensionInterfaceMemFreeFunction>>>(
+            'gdextension_interface_mem_free');
+        return ptrVar.value
+            .asFunction<DartGDExtensionInterfaceMemFreeFunction>();
+      }
+    }();
+    _variantDestroy!(variantPtr.cast());
+    _memFree!(variantPtr);
   } catch (_) {
     // Swallow; finalizers must not throw.
   }
@@ -438,14 +550,45 @@ void _finalizeBuiltinObject(Pointer<Void> builtinOpaquePtr) {
         // Ignore errors during user destructor call.
       }
     }
-    gde.ffiBindings.gde_mem_free(builtinOpaquePtr);
+    _memFree ??= () {
+      final libdl = DynamicLibrary.process();
+      try {
+        return libdl
+            .lookup<NativeFunction<GDExtensionInterfaceMemFreeFunction>>(
+                'mem_free')
+            .asFunction<DartGDExtensionInterfaceMemFreeFunction>();
+      } catch (_) {
+        final ptrVar = libdl.lookup<
+                Pointer<NativeFunction<GDExtensionInterfaceMemFreeFunction>>>(
+            'gdextension_interface_mem_free');
+        return ptrVar.value
+            .asFunction<DartGDExtensionInterfaceMemFreeFunction>();
+      }
+    }();
+    _memFree!(builtinOpaquePtr);
   } catch (_) {}
 }
 
 void _finalizeExtensionObject(Pointer<Void> extensionObjectPtr) {
   if (extensionObjectPtr == nullptr) return;
   try {
-    gde.ffiBindings.gde_object_destroy(extensionObjectPtr.cast());
+    _objectDestroy ??= () {
+      final libdl = DynamicLibrary.process();
+      try {
+        return libdl
+            .lookup<NativeFunction<GDExtensionInterfaceObjectDestroyFunction>>(
+                'object_destroy')
+            .asFunction<DartGDExtensionInterfaceObjectDestroyFunction>();
+      } catch (_) {
+        final ptrVar = libdl.lookup<
+                Pointer<
+                    NativeFunction<GDExtensionInterfaceObjectDestroyFunction>>>(
+            'gdextension_interface_object_destroy');
+        return ptrVar.value
+            .asFunction<DartGDExtensionInterfaceObjectDestroyFunction>();
+      }
+    }();
+    _objectDestroy!(extensionObjectPtr.cast());
   } catch (_) {}
 }
 
@@ -489,6 +632,20 @@ typedef GDExtensionCallableCustomFreeFunction = Void Function(
   Pointer<Void>,
 );
 
+// Cached function pointers resolved lazily (dual-path symbol -> interface pointer variable)
+// ClassDB registration
+DartGDExtensionInterfaceClassdbRegisterExtensionClass2Function?
+    _classdbRegisterExtensionClass2; // ignore: type_annotate_public_apis
+DartGDExtensionInterfaceClassdbRegisterExtensionClassPropertyFunction?
+    _classdbRegisterExtensionClassProperty; // ignore: type_annotate_public_apis
+DartGDExtensionInterfaceClassdbRegisterExtensionClassMethodFunction?
+    _classdbRegisterExtensionClassMethod; // ignore: type_annotate_public_apis
+// String / memory / object
+DartGDExtensionInterfaceStringToUtf8CharsFunction? _stringToUtf8Chars;
+DartGDExtensionInterfaceVariantDestroyFunction? _variantDestroy;
+DartGDExtensionInterfaceMemFreeFunction? _memFree;
+DartGDExtensionInterfaceObjectDestroyFunction? _objectDestroy;
+
 void _SignalCallableCallNative(
   Pointer<Void> userdata,
   Pointer<GDExtensionConstVariantPtr> args,
@@ -496,12 +653,12 @@ void _SignalCallableCallNative(
   GDExtensionVariantPtr rRet,
   Pointer<GDExtensionCallError> err,
 ) {
-  err.ref.error = GDExtensionCallErrorType.GDEXTENSION_CALL_OK;
+  err.ref.errorAsInt = GDExtensionCallErrorType.GDEXTENSION_CALL_OK.value;
   final key = userdata.address;
   final sc = GodotDartNativeBindings._signalCallables[key];
   if (sc == null) {
-    err.ref.error =
-        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    err.ref.errorAsInt =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD.value;
     return;
   }
   final variants = <Variant>[];
@@ -516,8 +673,8 @@ void _SignalCallableCallNative(
     // ignore: unnecessary_cast
     (sc as dynamic).call(variants);
   } catch (_) {
-    err.ref.error =
-        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD;
+    err.ref.errorAsInt =
+        GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD.value;
   }
 }
 

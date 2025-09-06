@@ -242,34 +242,36 @@ class GodotDart {
 
   // ---------- Variant pointer accessors (cached) ----------
   GDExtensionPtrBuiltInMethod variantGetBuiltinMethod(
-    int variantType, StringName name, int hash) {
-  final lib = DynamicLibrary.process();
-  try {
-    final fn = lib
-      .lookup<
-        NativeFunction<
-          GDExtensionPtrBuiltInMethod Function(UnsignedInt,
-            GDExtensionConstStringNamePtr, Int64)>>(
-        'variant_get_ptr_builtin_method')
-      .asFunction<
-        GDExtensionPtrBuiltInMethod Function(int,
-          GDExtensionConstStringNamePtr, int)>();
-    return fn(variantType, name.nativePtr.cast(), hash);
-  } catch (_) {
-    final ptrVar = lib.lookup<
-      Pointer<
-        NativeFunction<
-          GDExtensionPtrBuiltInMethod Function(UnsignedInt,
-            GDExtensionConstStringNamePtr, Int64)>>>(
-      'gdextension_interface_variant_get_ptr_builtin_method');
-    final fn = ptrVar.value.asFunction<
-      GDExtensionPtrBuiltInMethod Function(
-        int, GDExtensionConstStringNamePtr, int)>();
-    return fn(variantType, name.nativePtr.cast(), hash);
-  }
+      int variantType, StringName name, int hash) {
+    final lib = DynamicLibrary.process();
+    try {
+      final fn = lib
+          .lookup<
+              NativeFunction<
+                  GDExtensionPtrBuiltInMethod Function(
+                      UnsignedInt,
+                      GDExtensionConstStringNamePtr,
+                      Int64)>>('variant_get_ptr_builtin_method')
+          .asFunction<
+              GDExtensionPtrBuiltInMethod Function(
+                  int, GDExtensionConstStringNamePtr, int)>();
+      return fn(variantType, name.nativePtr.cast(), hash);
+    } catch (_) {
+      final ptrVar = lib.lookup<
+              Pointer<
+                  NativeFunction<
+                      GDExtensionPtrBuiltInMethod Function(
+                          UnsignedInt, GDExtensionConstStringNamePtr, Int64)>>>(
+          'gdextension_interface_variant_get_ptr_builtin_method');
+      final fn = ptrVar.value.asFunction<
+          GDExtensionPtrBuiltInMethod Function(
+              int, GDExtensionConstStringNamePtr, int)>();
+      return fn(variantType, name.nativePtr.cast(), hash);
+    }
   }
 
-  GDExtensionPtrConstructor variantGetConstructor(int variantType, int index) {
+  GDExtensionPtrConstructor variantGetConstructor(
+      GDExtensionVariantType variantType, int index) {
     final lib = DynamicLibrary.process();
     try {
       final fn = lib
@@ -278,39 +280,39 @@ class GodotDart {
                   GDExtensionPtrConstructor Function(
                       UnsignedInt, Int32)>>('variant_get_ptr_constructor')
           .asFunction<GDExtensionPtrConstructor Function(int, int)>();
-      return fn(variantType, index);
+      return fn(variantType.value, index);
     } catch (_) {
       final ptrVar = lib.lookup<
               Pointer<
                   NativeFunction<
-                      GDExtensionPtrConstructor Function(
-                          UnsignedInt, Int32)>>>(
+                      GDExtensionPtrConstructor Function(UnsignedInt, Int32)>>>(
           'gdextension_interface_variant_get_ptr_constructor');
-      final fn = ptrVar.value.asFunction<
-          GDExtensionPtrConstructor Function(int, int)>();
-      return fn(variantType, index);
+      final fn = ptrVar.value
+          .asFunction<GDExtensionPtrConstructor Function(int, int)>();
+      return fn(variantType.value, index);
     }
   }
 
-  GDExtensionPtrDestructor variantGetDestructor(int variantType) {
+  GDExtensionPtrDestructor variantGetDestructor(
+      GDExtensionVariantType variantType) {
     final lib = DynamicLibrary.process();
     try {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrDestructor Function(UnsignedInt)>>(
-              'variant_get_ptr_destructor')
+                  GDExtensionPtrDestructor Function(
+                      UnsignedInt)>>('variant_get_ptr_destructor')
           .asFunction<GDExtensionPtrDestructor Function(int)>();
-      return fn(variantType);
+      return fn(variantType.value);
     } catch (_) {
       final ptrVar = lib.lookup<
-              Pointer<
-                  NativeFunction<
-                      GDExtensionPtrDestructor Function(UnsignedInt)>>>(
-          'gdextension_interface_variant_get_ptr_destructor');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrDestructor Function(int)>();
-      return fn(variantType);
+          Pointer<
+              NativeFunction<
+                  GDExtensionPtrDestructor Function(
+                      UnsignedInt)>>>('variant_get_ptr_destructor');
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrDestructor Function(int)>();
+      return fn(variantType.value);
     }
   }
 
@@ -321,8 +323,7 @@ class GodotDart {
           .lookup<
               NativeFunction<
                   GDExtensionPtrGetter Function(UnsignedInt,
-                      GDExtensionConstStringNamePtr)>>(
-              'variant_get_ptr_getter')
+                      GDExtensionConstStringNamePtr)>>('variant_get_ptr_getter')
           .asFunction<
               GDExtensionPtrGetter Function(
                   int, GDExtensionConstStringNamePtr)>();
@@ -331,8 +332,8 @@ class GodotDart {
       final ptrVar = lib.lookup<
               Pointer<
                   NativeFunction<
-                      GDExtensionPtrGetter Function(UnsignedInt,
-                          GDExtensionConstStringNamePtr)>>>(
+                      GDExtensionPtrGetter Function(
+                          UnsignedInt, GDExtensionConstStringNamePtr)>>>(
           'gdextension_interface_variant_get_ptr_getter');
       final fn = ptrVar.value.asFunction<
           GDExtensionPtrGetter Function(int, GDExtensionConstStringNamePtr)>();
@@ -347,8 +348,7 @@ class GodotDart {
           .lookup<
               NativeFunction<
                   GDExtensionPtrSetter Function(UnsignedInt,
-                      GDExtensionConstStringNamePtr)>>(
-              'variant_get_ptr_setter')
+                      GDExtensionConstStringNamePtr)>>('variant_get_ptr_setter')
           .asFunction<
               GDExtensionPtrSetter Function(
                   int, GDExtensionConstStringNamePtr)>();
@@ -357,8 +357,8 @@ class GodotDart {
       final ptrVar = lib.lookup<
               Pointer<
                   NativeFunction<
-                      GDExtensionPtrSetter Function(UnsignedInt,
-                          GDExtensionConstStringNamePtr)>>>(
+                      GDExtensionPtrSetter Function(
+                          UnsignedInt, GDExtensionConstStringNamePtr)>>>(
           'gdextension_interface_variant_get_ptr_setter');
       final fn = ptrVar.value.asFunction<
           GDExtensionPtrSetter Function(int, GDExtensionConstStringNamePtr)>();
@@ -372,8 +372,8 @@ class GodotDart {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrIndexedSetter Function(UnsignedInt)>>(
-              'variant_get_ptr_indexed_setter')
+                  GDExtensionPtrIndexedSetter Function(
+                      UnsignedInt)>>('variant_get_ptr_indexed_setter')
           .asFunction<GDExtensionPtrIndexedSetter Function(int)>();
       return fn(variantType);
     } catch (_) {
@@ -382,8 +382,8 @@ class GodotDart {
                   NativeFunction<
                       GDExtensionPtrIndexedSetter Function(UnsignedInt)>>>(
           'gdextension_interface_variant_get_ptr_indexed_setter');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrIndexedSetter Function(int)>();
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrIndexedSetter Function(int)>();
       return fn(variantType);
     }
   }
@@ -394,8 +394,8 @@ class GodotDart {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrIndexedGetter Function(UnsignedInt)>>(
-              'variant_get_ptr_indexed_getter')
+                  GDExtensionPtrIndexedGetter Function(
+                      UnsignedInt)>>('variant_get_ptr_indexed_getter')
           .asFunction<GDExtensionPtrIndexedGetter Function(int)>();
       return fn(variantType);
     } catch (_) {
@@ -404,8 +404,8 @@ class GodotDart {
                   NativeFunction<
                       GDExtensionPtrIndexedGetter Function(UnsignedInt)>>>(
           'gdextension_interface_variant_get_ptr_indexed_getter');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrIndexedGetter Function(int)>();
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrIndexedGetter Function(int)>();
       return fn(variantType);
     }
   }
@@ -416,8 +416,8 @@ class GodotDart {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrKeyedSetter Function(UnsignedInt)>>(
-              'variant_get_ptr_keyed_setter')
+                  GDExtensionPtrKeyedSetter Function(
+                      UnsignedInt)>>('variant_get_ptr_keyed_setter')
           .asFunction<GDExtensionPtrKeyedSetter Function(int)>();
       return fn(variantType);
     } catch (_) {
@@ -426,8 +426,8 @@ class GodotDart {
                   NativeFunction<
                       GDExtensionPtrKeyedSetter Function(UnsignedInt)>>>(
           'gdextension_interface_variant_get_ptr_keyed_setter');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrKeyedSetter Function(int)>();
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrKeyedSetter Function(int)>();
       return fn(variantType);
     }
   }
@@ -438,8 +438,8 @@ class GodotDart {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrKeyedGetter Function(UnsignedInt)>>(
-              'variant_get_ptr_keyed_getter')
+                  GDExtensionPtrKeyedGetter Function(
+                      UnsignedInt)>>('variant_get_ptr_keyed_getter')
           .asFunction<GDExtensionPtrKeyedGetter Function(int)>();
       return fn(variantType);
     } catch (_) {
@@ -448,8 +448,8 @@ class GodotDart {
                   NativeFunction<
                       GDExtensionPtrKeyedGetter Function(UnsignedInt)>>>(
           'gdextension_interface_variant_get_ptr_keyed_getter');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrKeyedGetter Function(int)>();
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrKeyedGetter Function(int)>();
       return fn(variantType);
     }
   }
@@ -460,8 +460,8 @@ class GodotDart {
       final fn = lib
           .lookup<
               NativeFunction<
-                  GDExtensionPtrKeyedChecker Function(UnsignedInt)>>(
-              'variant_get_ptr_keyed_checker')
+                  GDExtensionPtrKeyedChecker Function(
+                      UnsignedInt)>>('variant_get_ptr_keyed_checker')
           .asFunction<GDExtensionPtrKeyedChecker Function(int)>();
       return fn(variantType);
     } catch (_) {
@@ -470,8 +470,8 @@ class GodotDart {
                   NativeFunction<
                       GDExtensionPtrKeyedChecker Function(UnsignedInt)>>>(
           'gdextension_interface_variant_get_ptr_keyed_checker');
-      final fn = ptrVar.value
-          .asFunction<GDExtensionPtrKeyedChecker Function(int)>();
+      final fn =
+          ptrVar.value.asFunction<GDExtensionPtrKeyedChecker Function(int)>();
       return fn(variantType);
     }
   }
