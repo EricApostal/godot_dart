@@ -28,12 +28,16 @@ extension TNode on Node {
 
 extension StringExtensions on String {
   static String fromGodotStringPtr(GDExtensionTypePtr ptr) {
+    final lib = DynamicLibrary.process();
+    final stringToUtf8Chars = lib
+        .lookup<NativeFunction<GDExtensionInterfaceStringToUtf16CharsFunction>>(
+            'string_to_utf16_chars')
+        .asFunction<DartGDExtensionInterfaceStringToUtf16CharsFunction>();
+
     return using((arena) {
-      int length =
-          gde.ffiBindings.gde_string_to_utf16_chars(ptr.cast(), nullptr, 0);
+      int length = stringToUtf8Chars(ptr.cast(), nullptr, 0);
       final chars = arena.allocate<Uint16>(sizeOf<Uint16>() * length);
-      gde.ffiBindings
-          .gde_string_to_utf16_chars(ptr.cast(), chars.cast(), length);
+      stringToUtf8Chars(ptr.cast(), chars.cast(), length);
       return chars.cast<Utf16>().toDartString(length: length);
     });
   }
