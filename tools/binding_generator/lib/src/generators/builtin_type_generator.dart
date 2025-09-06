@@ -132,11 +132,11 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
     final members = builtin.members ?? [];
     for (final member in members) {
       o.p('_bindings.member${member.name.toUpperCamelCase()}Getter = gde.variantGetPtrGetter(');
-      o.p('  $variantEnum,');
+      o.p('  $variantEnum.value,');
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
       o.p('_bindings.member${member.name.toUpperCamelCase()}Setter = gde.variantGetPtrSetter(');
-      o.p('  $variantEnum,');
+      o.p('  $variantEnum.value,');
       o.p("  StringName.fromString('${member.name}'),");
       o.p(');');
     }
@@ -145,20 +145,20 @@ void _writeBindingInitializer(CodeSink o, BuiltinClass builtin) {
     for (final method in methods) {
       var dartMethodName = escapeMethodName(method.name);
       o.p('_bindings.method${dartMethodName.toUpperCamelCase()} = gde.variantGetBuiltinMethod(');
-      o.p('  $variantEnum,');
+      o.p('  $variantEnum.value,');
       o.p("  StringName.fromString('${method.name}'),");
       o.p('  ${method.hash},');
       o.p(');');
     }
 
     if (builtin.indexingReturnType != null) {
-      o.p('_bindings.indexedSetter = gde.variantGetIndexedSetter($variantEnum);');
-      o.p('_bindings.indexedGetter = gde.variantGetIndexedGetter($variantEnum);');
+      o.p('_bindings.indexedSetter = gde.variantGetIndexedSetter($variantEnum.value);');
+      o.p('_bindings.indexedGetter = gde.variantGetIndexedGetter($variantEnum.value);');
     }
     if (builtin.isKeyed) {
-      o.p('_bindings.keyedSetter = gde.variantGetKeyedSetter($variantEnum);');
-      o.p('_bindings.keyedGetter = gde.variantGetKeyedGetter($variantEnum);');
-      o.p('_bindings.keyedChecker = gde.variantGetKeyedChecker($variantEnum);');
+      o.p('_bindings.keyedSetter = gde.variantGetKeyedSetter($variantEnum.value);');
+      o.p('_bindings.keyedGetter = gde.variantGetKeyedGetter($variantEnum.value);');
+      o.p('_bindings.keyedChecker = gde.variantGetKeyedChecker($variantEnum.value);');
     }
   }, '}');
   o.nl();
@@ -170,7 +170,7 @@ void _writeConstructors(CodeSink o, BuiltinClass builtin) {
 
   o.b('${builtin.dartName}.fromVariantPtr(GDExtensionVariantPtr ptr)', () {
     o.p('  : $superConstructor {');
-    o.p('final c = getToTypeConstructor(GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()});');
+    o.p('final c = getToTypeConstructor(GDExtensionVariantType.GDEXTENSION_VARIANT_TYPE_${builtin.name.toUpperSnakeCase()}.value);');
     o.p('c!(nativePtr.cast(), ptr);');
   }, '}');
   o.nl();
