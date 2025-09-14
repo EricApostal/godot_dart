@@ -15,7 +15,6 @@
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
-#include "script/dart_script.h"
 
 enum class MethodFlags : int32_t {
   None,
@@ -79,7 +78,6 @@ public:
   std::mutex _work_lock;
   Dart_Isolate _isolate;
   std::thread::id _isolate_current_thread;
-  std::set<godot::Ref<DartScript>> _pending_reloads;
   std::set<DartGodotInstanceBinding *> _pending_ref_changes;
 
   Dart_PersistentHandle _godot_dart_library;

@@ -15,7 +15,6 @@ add_subdirectory(${GODOT_CPP_DIR} "godot-cpp")
 add_library(godot_dart SHARED
     dart_bindings.cpp
     dart_instance_binding.cpp
-    "script/dart_script_instance.cpp"
     gde_c_interface.cpp
     gde_dart_converters.cpp
     gde_wrapper.cpp
@@ -26,9 +25,6 @@ add_library(godot_dart SHARED
     editor/godot_dart_editor_plugin.cpp
     editor/dart_templates.cpp
     "editor/dart_progress_dialog.cpp"
-    script/dart_script_language.cpp
-    script/dart_script.cpp
-    script/dart_resource_format.cpp
  )
 
 target_include_directories(godot_dart PUBLIC

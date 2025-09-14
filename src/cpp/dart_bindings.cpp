@@ -19,8 +19,7 @@
 #include "gde_dart_converters.h"
 #include "gde_wrapper.h"
 #include "ref_counted_wrapper.h"
-#include "script/dart_script_instance.h"
-#include "script/dart_script_language.h"
+#include "godot_string_wrappers.h"
 
 // Forward declarations for Dart callbacks and helpers
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope);
@@ -242,9 +241,6 @@ void GodotDartBindings::perform_frame_maintanance() {
       DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")),
                  "Failed to get _isReloading");
       Dart_BooleanValue(dart_is_reloading, &_is_reloading);
-      if (!_is_reloading) {
-        DartScriptLanguage::instance()->did_finish_hot_reload();
-      }
     }
 
     Dart_ExitScope();
@@ -791,14 +787,6 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
   }
 
   GDEWrapper *gde = GDEWrapper::instance();
-  GDExtensionScriptInstanceDataPtr script_instance = gde_object_get_script_instance(
-      reinterpret_cast<GDExtensionObjectPtr>(object_ptr), DartScriptLanguage::instance()->_owner);
-  if (script_instance) {
-    Dart_Handle obj = reinterpret_cast<DartScriptInstance *>(script_instance)->get_dart_object();
-    Dart_SetReturnValue(args, obj);
-    return;
-  }
-
   DartGodotInstanceBinding *binding = (DartGodotInstanceBinding *)gde_object_get_instance_binding(
       reinterpret_cast<GDExtensionObjectPtr>(object_ptr), bindings,
       &DartGodotInstanceBinding::engine_binding_callbacks);
@@ -827,16 +815,6 @@ void get_godot_type_info(Dart_NativeArguments args) {
   Dart_SetReturnValue(args, type_info);
 }
 
-void attach_type_resolver(Dart_NativeArguments args) {
-  DartScriptLanguage *script_language = DartScriptLanguage::instance();
-  if (!script_language) {
-    Dart_ThrowException(Dart_NewStringFromCString("GodotDart has been shutdown!"));
-    return;
-  }
-
-  Dart_Handle resolver = Dart_GetNativeArgument(args, 1);
-  script_language->attach_type_resolver(resolver);
-}
 
 Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool *auto_setup_scope) {
   Dart_EnterScope();
@@ -866,8 +844,6 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
   } else if (0 == strcmp(c_name, "GodotDartNativeBindings::getGodotTypeInfo")) {
     *auto_setup_scope = true;
     ret = get_godot_type_info;
-  } else if (0 == strcmp(c_name, "GodotDartNativeBindings::attachTypeResolver")) {
-    ret = attach_type_resolver;
   }
 
   Dart_ExitScope();
@@ -943,14 +919,6 @@ GDE_EXPORT Dart_Handle dart_object_from_instance_binding(GDExtensionClassInstanc
   return obj;
 }
 
-GDE_EXPORT GDExtensionScriptInstanceDataPtr get_script_instance(GDExtensionConstObjectPtr godot_object) {
-  DartScriptLanguage *script_language = DartScriptLanguage::instance();
-  if (script_language == nullptr) {
-    return nullptr;
-  }
-
-  return gde_object_get_script_instance(godot_object, script_language->_owner);
-}
 
 void call_dart_signal(void *callable_userdata, const GDExtensionConstVariantPtr *p_args,
                       GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error) {
@@ -1078,16 +1046,6 @@ GDE_EXPORT void finalize_extension_object(GDExtensionObjectPtr extention_object)
   gde_object_destroy(extention_object);
 }
 
-GDE_EXPORT Dart_Handle object_from_script_instance(DartScriptInstance *script_instance) {
-  if (!script_instance) {
-    return Dart_Null();
-  }
-
-  DART_CHECK_RET(dart_object, script_instance->get_dart_object(), Dart_Null(),
-                 "Failed to get object from persistent handle");
-
-  return dart_object;
-}
 
 GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
   Dart_EnterScope();

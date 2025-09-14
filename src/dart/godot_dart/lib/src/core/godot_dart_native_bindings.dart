@@ -44,15 +44,6 @@ class GodotDartNativeBindings {
           'dart_object_from_instance_binding')
       .asFunction<Object Function(GDExtensionClassInstancePtr)>();
 
-  late final getScriptInstance = processLib
-      .lookup<
-          NativeFunction<
-              GDExtensionScriptInstanceDataPtr Function(
-                  GDExtensionConstObjectPtr)>>('get_script_instance')
-      .asFunction<
-          GDExtensionScriptInstanceDataPtr Function(
-              GDExtensionConstObjectPtr)>();
-
   late final createSignalCallable = processLib
       .lookup<NativeFunction<Handle Function(Handle, GDObjectInstanceID)>>(
           'create_signal_callable')
@@ -83,9 +74,6 @@ class GodotDartNativeBindings {
 
   @pragma('vm:external-name', 'GodotDartNativeBindings::getGodotTypeInfo')
   external TypeInfo getGodotTypeInfo(Type type);
-
-  @pragma('vm:external-name', 'GodotDartNativeBindings::attachTypeResolver')
-  external void attachTypeResolver(TypeResolver resolver);
 
   Pointer<Void> toPersistentHandle(Object instance) {
     return _safeNewPersistentHandle(instance);

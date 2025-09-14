@@ -372,10 +372,6 @@ Object? convertFromVariantPtr(GDExtensionVariantPtr variantPtr) {
         Pointer<GDExtensionObjectPtr> ptr =
             arena.allocate(sizeOf<GDExtensionObjectPtr>());
         c!(ptr.cast(), variantPtr);
-        final scriptInstance = gde.dartBindings.getScriptInstance(ptr.value);
-        if (scriptInstance != nullptr) {
-          return gde.dartBindings.objectFromScriptInstance(scriptInstance);
-        }
 
         //Should not need the binding token anymore
         return gde.dartBindings.gdObjectToDartObject(ptr.value);
