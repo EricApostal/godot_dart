@@ -56,9 +56,13 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
 
   // String and String name need their constructors bound before anything else
   // because everything else relies on them being done.
+
   GDString.initBindingsConstructorDestructor();
   StringName.initBindingsConstructorDestructor();
+
+  print('gd string init bindings');
   GDString.initBindings();
+  print('end');
 
   StringName.initBindings();
   _dartBuiltinConstructors[StringName.sTypeInfo.variantType] =

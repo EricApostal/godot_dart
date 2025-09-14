@@ -32,7 +32,9 @@ abstract class BuiltinType implements Finalizable {
   }
 
   BuiltinType(int size, GDExtensionPtrDestructor? destructor) {
+    print('allocating type opaquely');
     allocateOpaque(size, destructor);
+    print('did allocate opaque');
     finalizer.attach(this, _opaque.cast());
   }
 
@@ -43,9 +45,14 @@ abstract class BuiltinType implements Finalizable {
   @protected
   Pointer<Uint8> allocateOpaque(
       int size, GDExtensionPtrDestructor? destructor) {
+    print('before gde');
     _opaque =
         gde.ffiBindings.gde_mem_alloc(GodotDart.destructorSize + size).cast();
-    _opaque.cast<GDExtensionPtrDestructor>().value = destructor ?? nullptr;
+    print('after gde');
+    final newval = destructor ?? nullptr;
+    print('newval = $newval');
+    _opaque.cast<GDExtensionPtrDestructor>().value = newval;
+    print('cast');
     return _opaque + GodotDart.destructorSize;
   }
 
