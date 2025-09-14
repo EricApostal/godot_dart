@@ -73,6 +73,10 @@ GDE_EXPORT GDExtensionInt gde_string_to_utf8_chars(GDExtensionConstStringPtr p_s
 GDE_EXPORT GDExtensionInt gde_string_to_utf16_chars(GDExtensionConstStringPtr p_self, char16_t *r_text,
                                                     GDExtensionInt p_max_write_length);
 
+// StringName utilities (C API)
+GDE_EXPORT void gde_string_name_new_with_utf8_chars(GDExtensionUninitializedStringNamePtr r_dest,
+                                                    const char *p_contents);
+
 GDE_EXPORT GDExtensionObjectPtr gde_global_get_singleton(GDExtensionConstStringNamePtr p_name);
 
 GDE_EXPORT void *gde_classdb_get_class_tag(GDExtensionConstStringNamePtr p_classname);

@@ -227,6 +227,13 @@ GDExtensionInt gde_string_to_utf16_chars(GDExtensionConstStringPtr p_self, char1
   return 0;
 }
 
+static GDExtensionInterfaceStringNameNewWithUtf8Chars _string_name_new_with_utf8_chars_func = nullptr;
+void gde_string_name_new_with_utf8_chars(GDExtensionUninitializedStringNamePtr r_dest, const char *p_contents) {
+  if (_string_name_new_with_utf8_chars_func) {
+    _string_name_new_with_utf8_chars_func(r_dest, p_contents);
+  }
+}
+
 static GDExtensionInterfaceGlobalGetSingleton _global_get_singleton_func = nullptr;
 GDExtensionObjectPtr gde_global_get_singleton(GDExtensionConstStringNamePtr p_name) {
   if (_global_get_singleton_func) {
@@ -413,6 +420,7 @@ void gde_init_c_interface(GDExtensionInterfaceGetProcAddress get_proc_address) {
   LOAD_METHOD(string_new_with_utf8_chars, GDExtensionInterfaceStringNewWithUtf8Chars);
   LOAD_METHOD(string_to_utf8_chars, GDExtensionInterfaceStringToUtf8Chars);
   LOAD_METHOD(string_to_utf16_chars, GDExtensionInterfaceStringToUtf16Chars);
+  LOAD_METHOD(string_name_new_with_utf8_chars, GDExtensionInterfaceStringNameNewWithUtf8Chars);
   LOAD_METHOD(global_get_singleton, GDExtensionInterfaceGlobalGetSingleton);
   LOAD_METHOD(classdb_get_class_tag, GDExtensionInterfaceClassdbGetClassTag);
   LOAD_METHOD(classdb_register_extension_class2, GDExtensionInterfaceClassdbRegisterExtensionClass2);

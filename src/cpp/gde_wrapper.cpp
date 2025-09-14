@@ -16,6 +16,7 @@ void GDEWrapper::create_instance(GDExtensionInterfaceGetProcAddress gde_get_proc
 }
 
 bool GDEWrapper::initialize() {
+  printf("Running init GDE Wrapper\n");
   RefCountedWrapper::init();
 
   return true;
