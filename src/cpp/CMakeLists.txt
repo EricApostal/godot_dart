@@ -19,12 +19,8 @@ add_library(godot_dart SHARED
     gde_dart_converters.cpp
     gde_wrapper.cpp
     godot_dart.cpp
-    godot_dart_runtime_plugin.cpp
     godot_string_wrappers.cpp
     ref_counted_wrapper.cpp
-    editor/godot_dart_editor_plugin.cpp
-    editor/dart_templates.cpp
-    "editor/dart_progress_dialog.cpp"
  )
 
 target_include_directories(godot_dart PUBLIC
