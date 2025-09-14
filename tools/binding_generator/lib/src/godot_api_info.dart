@@ -14,6 +14,7 @@ enum TypeCategory {
   enumType,
   bitfieldType,
   typedArray,
+  functionPointer,
 }
 
 class GodotApiInfo {
@@ -92,6 +93,8 @@ class GodotApiInfo {
       return TypeCategory.bitfieldType;
     } else if (godotType == 'Variant') {
       return TypeCategory.builtinClass;
+    } else if (strippedType.item1 == 'GDExtensionInitializationFunction') {
+      return TypeCategory.functionPointer;
     }
 
     throw ArgumentError('Unknown type: `$godotType`');
@@ -371,6 +374,9 @@ String godotTypeToDartType(String? godotType) {
   final isOptional = !isPointer && typeCategory == TypeCategory.engineClass;
 
   if (isPointer) {
+    if (strippedType.item1 == 'GDExtensionInitializationFunction') {
+      return 'Pointer<NativeFunction<GDExtensionBool Function(GDExtensionInterfaceGetProcAddress, GDExtensionClassLibraryPtr, Pointer<GDExtensionInitialization>)>>';
+    }
     final ffiType =
         GodotApiInfo.instance().nativeStructures.containsKey(strippedType.item1)
             ? strippedType.item1
@@ -382,6 +388,7 @@ String godotTypeToDartType(String? godotType) {
       dartType += '>' * strippedType.item2;
       return dartType;
     } else {
+      print('Parsing $godotType done goofed up');
       throw Error();
     }
   }
