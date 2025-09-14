@@ -37,9 +37,15 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
       if (variantType == 0) {
         return null;
       }
-      return ffIinterface
+
+      final func = ffIinterface
           .gde_get_variant_from_type_constructor(variantType)
-          .asFunction();
+          .asFunction<GDExtensionVariantFromType>();
+
+      print(
+          'got func: ${ffIinterface.gde_get_variant_from_type_constructor(variantType).address}');
+
+      return func;
     },
   );
   _toTypeConstructor = List.generate(
@@ -50,7 +56,7 @@ void initVariantBindings(GDExtensionFFI ffIinterface) {
       }
       return ffIinterface
           .gde_get_variant_to_type_constructor(variantType)
-          .asFunction();
+          .asFunction<GDExtensionTypeFromVariant>();
     },
   );
 

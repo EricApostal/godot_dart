@@ -81,4 +81,31 @@ bool GDE_EXPORT godot_dart_init(GDExtensionInterfaceGetProcAddress p_get_proc_ad
   return init_obj.init();
 }
 
+bool GDE_EXPORT godot_dart_embedded_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
+                                         GDExtensionClassLibraryPtr p_library) {
+  gde_init_c_interface(p_get_proc_address);
+  GDEWrapper::create_instance(p_get_proc_address, p_library);
+  
+  godot_dart::initialize_level(godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE);
+  
+  return true;
+}
+
+void GDE_EXPORT godot_dart_embedded_shutdown() {
+  godot_dart::deinitialize_level(godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE);
+}
+
+bool GDE_EXPORT godot_dart_initialize_runtime() {
+  if (godot_dart::runtime_plugin != nullptr) {
+    return godot_dart::runtime_plugin->initialize_dart_bindings();
+  }
+  return false;
+}
+
+void GDE_EXPORT godot_dart_shutdown_runtime() {
+  if (godot_dart::runtime_plugin != nullptr) {
+    godot_dart::runtime_plugin->shutdown_dart_bindings();
+  }
+}
+
 }

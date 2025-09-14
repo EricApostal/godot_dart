@@ -142,17 +142,6 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
     // All set up, setup the instance
     _instance = this;
 
-    // Replace Dart's print function to send info to Godot instead
-    Dart_Handle url = Dart_NewStringFromCString("dart:_internal");
-    Dart_Handle internal_lib = Dart_LookupLibrary(url);
-    if (!Dart_IsError(internal_lib)) {
-      Dart_Handle print = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_getPrintClosure"), 0, NULL);
-      Dart_Handle result = Dart_SetField(internal_lib, Dart_NewStringFromCString("_printClosure"), print);
-      if (Dart_IsError(result)) {
-        GD_PRINT_ERROR("GodotDart: Error setting print closure");
-        GD_PRINT_ERROR(Dart_GetError(result));
-      }
-    }
 
     // Everything should be prepared, register Dart with Godot
     {
@@ -180,25 +169,6 @@ bool GodotDartBindings::initialize(const char *script_path, const char *package_
 
   return true;
 }
-
-void GodotDartBindings::reload_code() {
-  if (_is_reloading) {
-    return;
-  }
-
-  _is_reloading = true;
-  execute_on_dart_thread([&] {
-    DartBlockScope scope;
-
-    Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
-    Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_reloadCode"), 0, nullptr);
-    if (Dart_IsError(result)) {
-      GD_PRINT_WARNING("GodotDart: Error performing Dart hot reload:");
-      GD_PRINT_WARNING(Dart_GetError(result));
-    }
-  });
-}
-
 void GodotDartBindings::shutdown() {
   Dart_EnterIsolate(_isolate);
   _isolate_current_thread = std::this_thread::get_id();
