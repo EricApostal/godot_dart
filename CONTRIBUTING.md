@@ -52,7 +52,7 @@ This will regenerate `/dart/lib/src/core/gdextension_ffi_bindings.dart`
 ### Regenerating Class Files
 
 The `binding_generator` tool held `tools/binding_generator` directory generates the rest of
-the library's generated source files from `godot-coo/gdextension/extension_api.json`. 
+the library's generated source files from `godot-cpp/gdextension/extension_api.json`. 
 It can be run from the `tools/binding_generator` directory with:
 
 ```bash

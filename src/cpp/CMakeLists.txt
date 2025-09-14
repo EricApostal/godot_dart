@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
 project(godot_dart VERSION 0.1)
 
-set(DART_DIR "${PROJECT_SOURCE_DIR}/../dart_dll")
 set(GODOT_CPP_DIR "${PROJECT_SOURCE_DIR}/../../godot-cpp")
 set(EXAMPLE_DIR "${PROJECT_SOURCE_DIR}/../../example")
 
@@ -36,22 +35,7 @@ target_include_directories(godot_dart PUBLIC
     "${GODOT_CPP_DIR}/include"
     "${GODOT_CPP_DIR}/gen/include"
     "${GODOT_CPP_DIR}/gdextension"
-    "${DART_DIR}/include"
     "${PROJECT_SOURCE_DIR}"
-)
-
-set(DART_DLL_NAMES    
-    "dart_dll"
-)
-
-find_library(DART_DLL_DEBUG
-    NAMES ${DART_DLL_NAMES}
-    HINTS "${DART_DIR}/bin/debug"
-)
-
-find_library(DART_DLL_RELEASE
-    NAMES ${DART_DLL_NAMES}
-    HINTS "${DART_DIR}/bin/release" 
 )
 
 if(WIN32)
@@ -80,6 +64,7 @@ if(WIN32)
     set_target_properties(godot_dart PROPERTIES
         VS_DEBUGGER_COMMAND "C:\\Projects\\godot\\bin\\godot.windows.editor.dev.x86_64.exe"
         VS_DEBUGGER_COMMAND_ARGUMENTS "--verbose --editor --path \"C:\\Users\\Jeff Ward\\Projects\\GodotExperiments\\godot_dart\\example\\2d_tutorial\""
+        LINK_FLAGS "/FORCE:UNRESOLVED"
     )
 elseif(LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -94,21 +79,16 @@ elseif(LINUX)
     # Find shared libraries next to the executable
     set_target_properties(godot_dart PROPERTIES
         BUILD_WITH_INSTALL_RPATH FALSE
-        LINK_FLAGS ${RPATH_ARG})
+        LINK_FLAGS "${RPATH_ARG} -Wl,--allow-unresolved-references")
 
     target_link_libraries(godot_dart 
         Threads::Threads
         ${CMAKE_DL_LIBS}
     )
+elseif(APPLE)
+    set_target_properties(godot_dart PROPERTIES
+        LINK_FLAGS "-undefined dynamic_lookup"
+    )
 endif()
 
 target_link_libraries(godot_dart godot-cpp)
-
-# TODO: Debug / release dart_dll libraries
-target_link_libraries(godot_dart ${DART_DLL_RELEASE})
-
-# Copy dll to sample directories
-add_custom_command(TARGET godot_dart POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:godot_dart> "${EXAMPLE_DIR}/2d_tutorial"
-  COMMAND_EXPAND_LISTS
-)
