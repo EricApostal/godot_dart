@@ -20,6 +20,7 @@ export 'src/core/property_info.dart';
 export 'src/core/rpc_info.dart';
 export 'src/core/type_info.dart';
 export 'src/core/type_resolver.dart';
+export 'src/core/gdextension_ffi_bindings.dart' hide GDExtensionInitializationLevel;
 export 'src/extensions/async_extensions.dart';
 export 'src/extensions/core_extensions.dart';
 export 'src/gen/engine_classes.dart';

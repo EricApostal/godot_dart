@@ -23,5 +23,6 @@ ffigen:
   headers:
     entry-points:
       - '../../cpp/gde_c_interface.h'
+      - '../../cpp/libgodot.h'
   compiler-opts:
       - '-I../../../godot-cpp/gdextension/'
