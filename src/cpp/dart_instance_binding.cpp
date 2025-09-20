@@ -120,8 +120,8 @@ bool DartGodotInstanceBinding::convert_to_weak() {
   if (Dart_IsNull(object)) {
     return false;
   }
-  Dart_WeakPersistentHandle weak_handle = Dart_NewWeakPersistentHandle(object, this, 0, gde_weak_finalizer);
-  Dart_DeletePersistentHandle((Dart_PersistentHandle)_persistent_handle);
+  Dart_WeakPersistentHandle weak_handle = Dart_NewWeakPersistentHandle_DL(object, this, 0, gde_weak_finalizer);
+  Dart_DeletePersistentHandle_DL((Dart_PersistentHandle)_persistent_handle);
 
   _persistent_handle = weak_handle;
   _is_weak = true;
@@ -137,7 +137,7 @@ void DartGodotInstanceBinding::create_dart_object() {
 
   bindings->execute_on_dart_thread([&] {
     Dart_PersistentHandle persistent_type = reinterpret_cast<Dart_PersistentHandle>(_dart_type);
-    Dart_Handle dart_type = Dart_HandleFromPersistent(persistent_type);
+    Dart_Handle dart_type = Dart_HandleFromPersistent_DL(persistent_type);
 
     Dart_Handle dart_pointer = bindings->new_dart_void_pointer(_godot_object);
     Dart_Handle args[1] = {dart_pointer};

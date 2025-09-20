@@ -76,7 +76,7 @@ bool GodotDartBindings::initialize() {
   DART_CHECK_RET(godot_dart_library, Dart_LookupLibrary(godot_dart_package_name), false,
                  "GodotDart: Initialization Error (Could not find the `godot_dart` "
                  "package)");
-  _godot_dart_library = Dart_NewPersistentHandle(godot_dart_library);
+  _godot_dart_library = Dart_NewPersistentHandle_DL(godot_dart_library);
 
   // Find the Engine classes library. This is needed to lookup engine types
   {
@@ -85,7 +85,7 @@ bool GodotDartBindings::initialize() {
     DART_CHECK_RET(engine_classes_library, Dart_LookupLibrary(engine_classes_package_name), false,
                    "GodotDart: Initialization Error (Could not find the `engine_classes.dart` "
                    "package)");
-    _engine_classes_library = Dart_NewPersistentHandle(engine_classes_library);
+    _engine_classes_library = Dart_NewPersistentHandle_DL(engine_classes_library);
   }
 
   // Find the Variant / builting classes library. This is needed to lookup variant types
@@ -94,7 +94,7 @@ bool GodotDartBindings::initialize() {
     DART_CHECK_RET(variant_library, Dart_LookupLibrary(builtin_classes_package_name), false,
                    "GodotDart: Initialization Error (Could not find the `builtins.dart` "
                    "package)");
-    _variant_classes_library = Dart_NewPersistentHandle(variant_library);
+    _variant_classes_library = Dart_NewPersistentHandle_DL(variant_library);
   }
 
   // Find the DartBindings "library" (just the file) and set us as the native callback handler
@@ -103,7 +103,7 @@ bool GodotDartBindings::initialize() {
         Dart_NewStringFromCString("package:godot_dart/src/core/godot_dart_native_bindings.dart");
     DART_CHECK_RET(library, Dart_LookupLibrary(native_bindings_library_name), false,
                    "Error finding godot_dart_native_bindings.dart");
-    _native_library = Dart_NewPersistentHandle(library);
+    _native_library = Dart_NewPersistentHandle_DL(library);
     Dart_SetNativeResolver(library, native_resolver, nullptr);
   }
 
@@ -125,7 +125,7 @@ bool GodotDartBindings::initialize() {
     Dart_ListSetAt(type_args, 0, dart_void);
     DART_CHECK_RET(void_pointer, Dart_GetNonNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args),
                    false, "Error getting Pointer<Void> type");
-    _void_pointer_type = Dart_NewPersistentHandle(void_pointer);
+    _void_pointer_type = Dart_NewPersistentHandle_DL(void_pointer);
 
     Dart_Handle optional_void_pointer =
         Dart_GetNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args);
@@ -135,14 +135,14 @@ bool GodotDartBindings::initialize() {
 
       return false;
     }
-    _void_pointer_optional_type = Dart_NewPersistentHandle(optional_void_pointer);
+    _void_pointer_optional_type = Dart_NewPersistentHandle_DL(optional_void_pointer);
 
     Dart_Handle type_args_2 = Dart_NewList(1);
     Dart_ListSetAt(type_args_2, 0, void_pointer);
     DART_CHECK_RET(pointer_to_pointer,
                    Dart_GetNonNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args_2), false,
                    "Error getting Pointer<Pointer<Void> type");
-    _void_pointer_pointer_type = Dart_NewPersistentHandle(pointer_to_pointer);
+    _void_pointer_pointer_type = Dart_NewPersistentHandle_DL(pointer_to_pointer);
   }
 
   {
@@ -151,7 +151,7 @@ bool GodotDartBindings::initialize() {
                    "Error getting variant library");
     DART_CHECK_RET(variant, Dart_GetNonNullableType(core_library, Dart_NewStringFromCString("Variant"), 0, nullptr),
                    false, "Error getting Variant type");
-    _variant_type = Dart_NewPersistentHandle(variant);
+    _variant_type = Dart_NewPersistentHandle_DL(variant);
   }
 
   // All set up, setup the instance
@@ -714,7 +714,7 @@ void bind_class(Dart_NativeArguments args) {
 
   GDExtensionClassCreationInfo2 info = {0};
   info.is_exposed = true;
-  info.class_userdata = (void *)Dart_NewPersistentHandle(type_arg);
+  info.class_userdata = (void *)Dart_NewPersistentHandle_DL(type_arg);
   info.create_instance_func = GodotDartBindings::class_create_instance;
   info.free_instance_func = GodotDartBindings::class_free_instance;
   info.get_virtual_call_data_func = GodotDartBindings::get_virtual_call_data;
@@ -1021,7 +1021,7 @@ GDE_EXPORT Dart_Handle create_signal_callable(Dart_Handle signal_callable, GDObj
   GDEWrapper *gde = GDEWrapper::instance();
 
   GDExtensionCallableCustomInfo2 info = {};
-  info.callable_userdata = Dart_NewPersistentHandle(signal_callable);
+  info.callable_userdata = Dart_NewPersistentHandle_DL(signal_callable);
   info.token = gde->get_library_ptr();
   info.object_id = target;
   info.call_func = call_dart_signal;
@@ -1083,7 +1083,7 @@ GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
     return nullptr;
   }
 
-  Dart_PersistentHandle result = Dart_NewPersistentHandle(handle);
+  Dart_PersistentHandle result = Dart_NewPersistentHandle_DL(handle);
   if (Dart_IsError_DL(result)) {
     GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
     GD_PRINT_ERROR(Dart_GetError_DL(result));
