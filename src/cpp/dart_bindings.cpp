@@ -69,7 +69,7 @@ bool GodotDartBindings::initialize() {
   DartBlockScope scope;
 
   printf("GodotDart: Entered Dart scope\n");
-  Dart_SetMessageNotifyCallback(dart_message_notify_callback);
+  // Dart_SetMessageNotifyCallback(dart_message_notify_callback);
   printf("GodotDart: Set message notify callback\n");
 
   Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
@@ -184,10 +184,10 @@ bool GodotDartBindings::initialize() {
 }
 
 void GodotDartBindings::shutdown() {
-  Dart_EnterIsolate(_isolate);
+  Dart_EnterIsolate_DL(_isolate);
   _isolate_current_thread = std::this_thread::get_id();
 
-  Dart_EnterScope();
+  Dart_EnterScope_DL();
 
   Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
 
@@ -198,10 +198,10 @@ void GodotDartBindings::shutdown() {
     GD_PRINT_ERROR(Dart_GetError(result));
   }
 
-  Dart_DeletePersistentHandle(_godot_dart_library);
-  Dart_DeletePersistentHandle(_native_library);
+  Dart_DeletePersistentHandle_DL(_godot_dart_library);
+  Dart_DeletePersistentHandle_DL(_native_library);
 
-  Dart_ExitScope();
+  Dart_ExitScope_DL();
   //Dart_ExitIsolate();
 
   _is_stopping = true;
@@ -217,10 +217,10 @@ void GodotDartBindings::execute_on_dart_thread(std::function<void()> work) {
 
   _work_lock.lock();
   _isolate_current_thread = std::this_thread::get_id();
-  Dart_EnterIsolate(_isolate);
+  Dart_EnterIsolate_DL(_isolate);
   work();
 
-  Dart_ExitIsolate();
+  Dart_ExitIsolate_DL();
   _isolate_current_thread = std::thread::id();
   _work_lock.unlock();
 }
@@ -240,7 +240,7 @@ void GodotDartBindings::perform_frame_maintanance() {
   }
 
   execute_on_dart_thread([&] {
-    Dart_EnterScope();
+    Dart_EnterScope_DL();
     while (_pending_messages > 0) {
       DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
       _pending_messages--;
@@ -258,7 +258,7 @@ void GodotDartBindings::perform_frame_maintanance() {
     //   Dart_BooleanValue(dart_is_reloading, &_is_reloading);
     // }
 
-    Dart_ExitScope();
+    Dart_ExitScope_DL();
   });
 }
 
@@ -288,7 +288,7 @@ void GodotDartBindings::bind_method(const TypeInfo &bind_type, const char *metho
   MethodInfo *info = new MethodInfo();
   info->method_name = method_name;
   info->return_type = ret_type_info;
-  info->args_list = Dart_NewPersistentHandle(args_list);
+  info->args_list = Dart_NewPersistentHandle_DL(args_list);
   info->method_flags = method_flags;
 
   GDEWrapper *gde = GDEWrapper::instance();
