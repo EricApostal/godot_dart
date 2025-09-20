@@ -129,9 +129,9 @@ bool GodotDartBindings::initialize() {
 
     Dart_Handle optional_void_pointer =
         Dart_GetNullableType(library, Dart_NewStringFromCString("Pointer"), 1, &type_args);
-    if (Dart_IsError(void_pointer)) {
+    if (Dart_IsError_DL(void_pointer)) {
       GD_PRINT_ERROR("GodotDart: Error getting Pointer<Void>? type: ");
-      GD_PRINT_ERROR(Dart_GetError(optional_void_pointer));
+      GD_PRINT_ERROR(Dart_GetError_DL(optional_void_pointer));
 
       return false;
     }
@@ -189,13 +189,13 @@ void GodotDartBindings::shutdown() {
 
   Dart_EnterScope_DL();
 
-  Dart_Handle godot_dart_library = Dart_HandleFromPersistent(_godot_dart_library);
+  Dart_Handle godot_dart_library = Dart_HandleFromPersistent_DL(_godot_dart_library);
 
   GDEWrapper *wrapper = GDEWrapper::instance();
   Dart_Handle result = Dart_Invoke(godot_dart_library, Dart_NewStringFromCString("_unregisterGodot"), 0, nullptr);
-  if (Dart_IsError(result)) {
+  if (Dart_IsError_DL(result)) {
     GD_PRINT_ERROR("GodotDart: Error calling `_unregisterGodot`");
-    GD_PRINT_ERROR(Dart_GetError(result));
+    GD_PRINT_ERROR(Dart_GetError_DL(result));
   }
 
   Dart_DeletePersistentHandle_DL(_godot_dart_library);
@@ -252,7 +252,7 @@ void GodotDartBindings::perform_frame_maintanance() {
 
     // If we're reloading, check to see if we're done.
     // if (_is_reloading) {
-    //   Dart_Handle root_library = Dart_HandleFromPersistent(_godot_dart_library);
+    //   Dart_Handle root_library = Dart_HandleFromPersistent_DL(_godot_dart_library);
     //   DART_CHECK(dart_is_reloading, Dart_GetField(root_library, Dart_NewStringFromCString("_isReloading")),
     //              "Failed to get _isReloading");
     //   Dart_BooleanValue(dart_is_reloading, &_is_reloading);
@@ -380,18 +380,18 @@ Dart_Handle GodotDartBindings::find_dart_type(Dart_Handle type_name) {
   }
 
   // Check engine classes first:
-  DART_CHECK_RET(engine_classes_library, Dart_HandleFromPersistent(_engine_classes_library), Dart_Null(),
+  DART_CHECK_RET(engine_classes_library, Dart_HandleFromPersistent_DL(_engine_classes_library), Dart_Null(),
                  "Error getting engine class library.")
 
   Dart_Handle type = Dart_GetNonNullableType(engine_classes_library, type_name, 0, nullptr);
-  if (!Dart_IsError(type)) {
+  if (!Dart_IsError_DL(type)) {
     return type;
   }
 
-  DART_CHECK_RET(variant_library, Dart_HandleFromPersistent(_variant_classes_library), Dart_Null(),
+  DART_CHECK_RET(variant_library, Dart_HandleFromPersistent_DL(_variant_classes_library), Dart_Null(),
                  "Error getting variant library.")
   type = Dart_GetNonNullableType(variant_library, type_name, 0, nullptr);
-  if (!Dart_IsError(type)) {
+  if (!Dart_IsError_DL(type)) {
     return type;
   }
 
@@ -490,7 +490,7 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     MethodInfo *method_info = reinterpret_cast<MethodInfo *>(method_userdata);
     Dart_Handle dart_method_name = Dart_NewStringFromCString(method_info->method_name.c_str());
 
-    Dart_Handle args_list = Dart_HandleFromPersistent(method_info->args_list);
+    Dart_Handle args_list = Dart_HandleFromPersistent_DL(method_info->args_list);
 
     intptr_t arg_count = 0;
     Dart_ListLength(args_list, &arg_count);
@@ -501,8 +501,8 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
 
       Dart_Handle args_address = Dart_NewInteger(reinterpret_cast<intptr_t>(args));
       Dart_Handle convert_args[3]{
-          Dart_New(Dart_HandleFromPersistent(gde->_void_pointer_pointer_type), Dart_NewStringFromCString("fromAddress"),
-                   1, &args_address),
+          Dart_New(Dart_HandleFromPersistent_DL(gde->_void_pointer_pointer_type),
+                   Dart_NewStringFromCString("fromAddress"), 1, &args_address),
           Dart_NewInteger(arg_count),
           args_list,
       };
@@ -518,33 +518,33 @@ void GodotDartBindings::bind_call(void *method_userdata, GDExtensionClassInstanc
     Dart_Handle result = Dart_Null();
     if (method_info->method_flags == MethodFlags::None) {
       result = Dart_Invoke(dart_instance, dart_method_name, arg_count, dart_args);
-      if (Dart_IsError(result)) {
+      if (Dart_IsError_DL(result)) {
         GD_PRINT_ERROR("GodotDart: Error calling function: ");
-        GD_PRINT_ERROR(Dart_GetError(result));
+        GD_PRINT_ERROR(Dart_GetError_DL(result));
       }
     } else if (method_info->method_flags == MethodFlags::PropertyGetter) {
       result = Dart_GetField(dart_instance, dart_method_name);
-      if (Dart_IsError(result)) {
+      if (Dart_IsError_DL(result)) {
         GD_PRINT_ERROR("GodotDart: Error calling getter: ");
-        GD_PRINT_ERROR(Dart_GetError(result));
+        GD_PRINT_ERROR(Dart_GetError_DL(result));
       }
     } else if (method_info->method_flags == MethodFlags::PropertySetter) {
       result = Dart_SetField(dart_instance, dart_method_name, dart_args[0]);
-      if (Dart_IsError(result)) {
+      if (Dart_IsError_DL(result)) {
         GD_PRINT_ERROR("GodotDart: Error calling setter: ");
-        GD_PRINT_ERROR(Dart_GetError(result));
+        GD_PRINT_ERROR(Dart_GetError_DL(result));
       }
     }
 
-    if (!Dart_IsError(result)) {
+    if (!Dart_IsError_DL(result)) {
       // Call back into Dart to convert to Variant. This may get moved back into C at some point but
       // the logic and type checking is easier in Dart.
-      Dart_Handle variant_type = Dart_HandleFromPersistent(gde->_variant_type);
+      Dart_Handle variant_type = Dart_HandleFromPersistent_DL(gde->_variant_type);
       Dart_Handle args[] = {result};
       Dart_Handle variant_result = Dart_New(variant_type, Dart_Null(), 1, args);
-      if (Dart_IsError(variant_result)) {
+      if (Dart_IsError_DL(variant_result)) {
         GD_PRINT_ERROR("GodotDart: Error converting return to variant: ");
-        GD_PRINT_ERROR(Dart_GetError(variant_result));
+        GD_PRINT_ERROR(Dart_GetError_DL(variant_result));
       } else {
         void *variantDataPtr = get_object_address(variant_result);
         if (variantDataPtr) {
@@ -572,7 +572,7 @@ void GodotDartBindings::ptr_call(void *method_userdata, GDExtensionClassInstance
 
     assert(false);
 
-    Dart_ExitScope();
+    Dart_ExitScope_DL();
   });
 }
 
@@ -587,7 +587,7 @@ GDExtensionObjectPtr GodotDartBindings::class_create_instance(void *p_userdata) 
   bindings->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
-    Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
+    Dart_Handle type = Dart_HandleFromPersistent_DL(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
     DART_CHECK(d_class_type_info, Dart_GetField(type, Dart_NewStringFromCString("sTypeInfo")),
                "Error finding typeInfo on object");
@@ -621,7 +621,7 @@ void *GodotDartBindings::get_virtual_call_data(void *p_userdata, GDExtensionCons
   bindings->execute_on_dart_thread([&]() {
     DartBlockScope scope;
 
-    Dart_Handle type = Dart_HandleFromPersistent(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
+    Dart_Handle type = Dart_HandleFromPersistent_DL(reinterpret_cast<Dart_PersistentHandle>(p_userdata));
 
     DART_CHECK(typeInfo, Dart_GetField(type, Dart_NewStringFromCString("sTypeInfo")),
                "Error finding sTypeInfo on Type");
@@ -789,9 +789,9 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
 
   Dart_Handle dart_gd_object = Dart_GetNativeArgument(args, 1);
   Dart_Handle address = Dart_GetField(dart_gd_object, Dart_NewStringFromCString("address"));
-  if (Dart_IsError(address)) {
-    GD_PRINT_ERROR(Dart_GetError(address));
-    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(address)));
+  if (Dart_IsError_DL(address)) {
+    GD_PRINT_ERROR(Dart_GetError_DL(address));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError_DL(address)));
     return;
   }
   uint64_t object_ptr = 0;
@@ -809,9 +809,9 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
     Dart_SetReturnValue(args, Dart_Null());
   } else {
     Dart_Handle obj = binding->get_dart_object();
-    if (Dart_IsError(obj)) {
-      GD_PRINT_ERROR(Dart_GetError(obj));
-      Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(obj)));
+    if (Dart_IsError_DL(obj)) {
+      GD_PRINT_ERROR(Dart_GetError_DL(obj));
+      Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError_DL(obj)));
       return;
     }
     Dart_SetReturnValue(args, obj);
@@ -821,9 +821,9 @@ void gd_object_to_dart_object(Dart_NativeArguments args) {
 void get_godot_type_info(Dart_NativeArguments args) {
   Dart_Handle dart_type = Dart_GetNativeArgument(args, 1);
   Dart_Handle type_info = Dart_GetField(dart_type, Dart_NewStringFromCString("sTypeInfo"));
-  if (Dart_IsError(type_info)) {
-    GD_PRINT_ERROR(Dart_GetError(type_info));
-    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError(type_info)));
+  if (Dart_IsError_DL(type_info)) {
+    GD_PRINT_ERROR(Dart_GetError_DL(type_info));
+    Dart_ThrowException(Dart_NewStringFromCString(Dart_GetError_DL(type_info)));
     return;
   }
 
@@ -860,7 +860,7 @@ Dart_NativeFunction native_resolver(Dart_Handle name, int num_of_arguments, bool
     ret = get_godot_type_info;
   }
 
-  Dart_ExitScope();
+  Dart_ExitScope_DL();
   return ret;
 }
 
@@ -889,7 +889,7 @@ void type_info_from_dart(TypeInfo *type_info, Dart_Handle dart_type_info) {
   type_info->variant_type = static_cast<GDExtensionVariantType>(temp);
   type_info->binding_callbacks = &DartGodotInstanceBinding::engine_binding_callbacks;
 
-  Dart_ExitScope();
+  Dart_ExitScope_DL();
 }
 
 // C calls from Dart
@@ -917,9 +917,9 @@ GDE_EXPORT void tie_dart_to_native(Dart_Handle dart_object, GDExtensionObjectPtr
   DartBlockScope scope;
 
   Dart_Handle d_class_type_info = Dart_GetField(dart_object, Dart_NewStringFromCString("typeInfo"));
-  if (Dart_IsError(d_class_type_info)) {
+  if (Dart_IsError_DL(d_class_type_info)) {
     GD_PRINT_ERROR("GodotDart: Error finding typeInfo on object: ");
-    GD_PRINT_ERROR(Dart_GetError(d_class_type_info));
+    GD_PRINT_ERROR(Dart_GetError_DL(d_class_type_info));
     return;
   }
 
@@ -955,9 +955,9 @@ void call_dart_signal(void *callable_userdata, const GDExtensionConstVariantPtr 
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle signal = Dart_HandleFromPersistent((Dart_PersistentHandle)callable_userdata);
+    Dart_Handle signal = Dart_HandleFromPersistent_DL((Dart_PersistentHandle)callable_userdata);
     // Create List<Variant> from the variants we're given
-    Dart_Handle variant_type = Dart_HandleFromPersistent(bindings->_variant_type);
+    Dart_Handle variant_type = Dart_HandleFromPersistent_DL(bindings->_variant_type);
     Dart_Handle null_variant = Dart_New(variant_type, Dart_Null(), 0, nullptr);
     Dart_Handle signal_args = Dart_NewListOfTypeFilled(variant_type, null_variant, p_argument_count);
     {
@@ -975,9 +975,9 @@ void call_dart_signal(void *callable_userdata, const GDExtensionConstVariantPtr 
 
     Dart_Handle args[] = {signal_args};
     Dart_Handle result = Dart_Invoke(signal, Dart_NewStringFromCString("call"), 1, args);
-    if (Dart_IsError(result)) {
+    if (Dart_IsError_DL(result)) {
       GD_PRINT_ERROR("GodotDart: Error performing signal call: ");
-      GD_PRINT_ERROR(Dart_GetError(result));
+      GD_PRINT_ERROR(Dart_GetError_DL(result));
       *r_error = GDExtensionCallError{
           GDEXTENSION_CALL_ERROR_INVALID_METHOD,
           0,
@@ -995,7 +995,7 @@ GDExtensionInt get_signal_argument_count(void *callable_userdata, GDExtensionBoo
   int64_t arg_count;
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
-    Dart_Handle signal = Dart_HandleFromPersistent((Dart_PersistentHandle)callable_userdata);
+    Dart_Handle signal = Dart_HandleFromPersistent_DL((Dart_PersistentHandle)callable_userdata);
 
     Dart_Handle arg_count_h = Dart_GetField(signal, Dart_NewStringFromCString("arguments"));
     Dart_IntegerToInt64(arg_count_h, &arg_count);
@@ -1010,7 +1010,7 @@ void free_dart_signal(void *callable_userdata) {
   bindings->execute_on_dart_thread([&] {
     DartBlockScope scope;
 
-    Dart_Handle signal = Dart_HandleFromPersistent((Dart_PersistentHandle)callable_userdata);
+    Dart_Handle signal = Dart_HandleFromPersistent_DL((Dart_PersistentHandle)callable_userdata);
     Dart_Invoke(signal, Dart_NewStringFromCString("clear"), 0, nullptr);
 
     Dart_DeletePersistentHandle((Dart_PersistentHandle)callable_userdata);
@@ -1079,19 +1079,19 @@ GDE_EXPORT void *safe_new_persistent_handle(Dart_Handle handle) {
 
   if (Dart_IsNull(handle)) {
     GD_PRINT_ERROR("GodotDart: `null` is not a valid value to pass to newPersistentHandle!");
-    Dart_ExitScope();
+    Dart_ExitScope_DL();
     return nullptr;
   }
 
   Dart_PersistentHandle result = Dart_NewPersistentHandle(handle);
-  if (Dart_IsError(result)) {
+  if (Dart_IsError_DL(result)) {
     GD_PRINT_ERROR("GodotDart: Error calling `Dart_WaitForEvent`");
-    GD_PRINT_ERROR(Dart_GetError(result));
-    Dart_ExitScope();
+    GD_PRINT_ERROR(Dart_GetError_DL(result));
+    Dart_ExitScope_DL();
     return nullptr;
   }
 
-  Dart_ExitScope();
+  Dart_ExitScope_DL();
 
   return (void *)result;
 }
