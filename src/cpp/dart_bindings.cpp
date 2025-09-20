@@ -242,7 +242,7 @@ void GodotDartBindings::perform_frame_maintanance() {
   execute_on_dart_thread([&] {
     Dart_EnterScope_DL();
     while (_pending_messages > 0) {
-      DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
+      //DART_CHECK(err, Dart_HandleMessage(), "Failure handling dart message");
       _pending_messages--;
     }
 

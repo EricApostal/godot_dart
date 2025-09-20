@@ -51,9 +51,9 @@ DartGodotInstanceBinding::~DartGodotInstanceBinding() {
 
 void DartGodotInstanceBinding::delete_dart_handle() {
   if (_is_weak) {
-    Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)_persistent_handle);
+    Dart_DeleteWeakPersistentHandle_DL((Dart_WeakPersistentHandle)_persistent_handle);
   } else {
-    Dart_DeletePersistentHandle((Dart_PersistentHandle)_persistent_handle);
+    Dart_DeletePersistentHandle_DL((Dart_PersistentHandle)_persistent_handle);
   }
 }
 
@@ -66,7 +66,7 @@ void DartGodotInstanceBinding::initialize(Dart_Handle dart_object, bool is_refco
 
     // Create our initial handle weak before calling init_ref, which may callback into reference
     _is_weak = true;
-    _persistent_handle = (void *)Dart_NewWeakPersistentHandle(dart_object, this, 0, gde_weak_finalizer);
+    _persistent_handle = (void *)Dart_NewWeakPersistentHandle_DL(dart_object, this, 0, gde_weak_finalizer);
     ref_counted.init_ref();
 
     int32_t count = ref_counted.get_reference_count();
@@ -77,7 +77,7 @@ void DartGodotInstanceBinding::initialize(Dart_Handle dart_object, bool is_refco
   } else {
     // Not refcounted, always hold strong
     _is_weak = false;
-    _persistent_handle = (void *)Dart_NewPersistentHandle(dart_object);
+    _persistent_handle = (void *)Dart_NewPersistentHandle_DL(dart_object);
   }
 }
 
@@ -87,10 +87,10 @@ Dart_Handle DartGodotInstanceBinding::get_dart_object() {
   }
 
   if (_is_weak) {
-    return Dart_HandleFromWeakPersistent((Dart_WeakPersistentHandle)_persistent_handle);
+    return Dart_HandleFromWeakPersistent_DL((Dart_WeakPersistentHandle)_persistent_handle);
   }
 
-  return Dart_HandleFromPersistent((Dart_PersistentHandle)_persistent_handle);
+  return Dart_HandleFromPersistent_DL((Dart_PersistentHandle)_persistent_handle);
 }
 
 bool DartGodotInstanceBinding::convert_to_strong() {
@@ -98,12 +98,12 @@ bool DartGodotInstanceBinding::convert_to_strong() {
 
   DartBlockScope scope;
 
-  Dart_Handle object = Dart_HandleFromWeakPersistent((Dart_WeakPersistentHandle)_persistent_handle);
+  Dart_Handle object = Dart_HandleFromWeakPersistent_DL((Dart_WeakPersistentHandle)_persistent_handle);
   if (Dart_IsNull(object)) {
     return false;
   }
-  Dart_PersistentHandle strong_handle = Dart_NewPersistentHandle(object);
-  Dart_DeleteWeakPersistentHandle((Dart_WeakPersistentHandle)_persistent_handle);
+  Dart_PersistentHandle strong_handle = Dart_NewPersistentHandle_DL(object);
+  Dart_DeleteWeakPersistentHandle_DL((Dart_WeakPersistentHandle)_persistent_handle);
 
   _persistent_handle = strong_handle;
   _is_weak = false;
@@ -116,7 +116,7 @@ bool DartGodotInstanceBinding::convert_to_weak() {
 
   DartBlockScope scope;
 
-  Dart_Handle object = Dart_HandleFromPersistent((Dart_PersistentHandle)_persistent_handle);
+  Dart_Handle object = Dart_HandleFromPersistent_DL((Dart_PersistentHandle)_persistent_handle);
   if (Dart_IsNull(object)) {
     return false;
   }
@@ -164,7 +164,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
       Dart_Handle type_name = to_dart_string(class_name);
       DART_CHECK(type, bindings->find_dart_type(type_name), "Error finding Dart type");
       if (!Dart_IsNull(type)) {
-        Dart_PersistentHandle persistent_type = Dart_NewPersistentHandle(type);
+        Dart_PersistentHandle persistent_type = Dart_NewPersistentHandle_DL(type);
         binding = new DartGodotInstanceBinding(persistent_type, p_instance);
       }
 
@@ -235,7 +235,7 @@ static GDExtensionBool __engine_binding_reference_callback(void *p_token, void *
 
   // If we're on the finalizer, we can't run any conversions, we'll have to hold them until we're done
   // performing finalization
-  bool is_finalizer = Dart_CurrentIsolate() == nullptr && Dart_CurrentIsolateGroup() != nullptr;
+  bool is_finalizer = Dart_CurrentIsolate_DL() == nullptr && Dart_CurrentIsolateGroup() != nullptr;
 
   if (p_reference) {
     // Refcount incremented, change our reference to strong to prevent Dart from finalizing
