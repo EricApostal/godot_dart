@@ -54,7 +54,8 @@ bool GodotDartBindings::initialize() {
   }
 
   printf("GodotDart: Initializing Dart Bindings, current = %p\n", _isolate);
-  _isolate = Dart_CurrentIsolate();
+  _isolate = Dart_CurrentIsolate_DL();
+  printf("GodotDart: Current Isolate = %p\n", _isolate);
   if (_isolate == nullptr) {
     printf("GodotDart: No current Dart isolate on this thread. Ensure initialize() is called from a "
            "Dart-invoked native callback on the isolate thread.\n");
@@ -63,10 +64,13 @@ bool GodotDartBindings::initialize() {
   printf("GodotDart: Dart Isolate Initialized: %p\n", _isolate);
 
   _isolate_current_thread = std::this_thread::get_id();
+  printf("GodotDart: Isolate current thread set to %p\n", _isolate_current_thread);
 
   DartBlockScope scope;
 
+  printf("GodotDart: Entered Dart scope\n");
   Dart_SetMessageNotifyCallback(dart_message_notify_callback);
+  printf("GodotDart: Set message notify callback\n");
 
   Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
   DART_CHECK_RET(godot_dart_library, Dart_LookupLibrary(godot_dart_package_name), false,

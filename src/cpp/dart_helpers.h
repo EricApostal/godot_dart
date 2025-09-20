@@ -61,10 +61,10 @@ class DartBlockScope {
 
 public:
   DartBlockScope() {
-    Dart_EnterScope();
+    Dart_EnterScope_DL();
   }
 
   ~DartBlockScope() {
-    Dart_ExitScope();
+    Dart_ExitScope_DL();
   }
 };
