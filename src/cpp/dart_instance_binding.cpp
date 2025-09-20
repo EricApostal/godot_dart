@@ -6,8 +6,8 @@
 #include "dart_bindings.h"
 #include "dart_helpers.h"
 #include "gde_c_interface.h"
-#include "ref_counted_wrapper.h"
 #include "godot_string_wrappers.h"
+#include "ref_counted_wrapper.h"
 
 void gde_weak_finalizer(void *isolate_callback_data, void *peer) {
   if (peer == nullptr) {
@@ -152,7 +152,7 @@ void DartGodotInstanceBinding::create_dart_object() {
 /* Binding callbacks used for Engine types implemented in Godot and wrapped in Dart */
 
 static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
-  GodotDartBindings *bindings = GodotDartBindings::instance();  
+  GodotDartBindings *bindings = GodotDartBindings::instance();
   godot::StringName class_name;
 
   DartGodotInstanceBinding *binding = nullptr;
@@ -171,7 +171,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
       Dart_ExitScope();
     });
   }
-    
+
   return binding;
 }
 
@@ -202,7 +202,7 @@ static void __engine_binding_free_callback(void *p_token, void *p_instance, void
       if (Dart_IsError(result)) {
         GD_PRINT_ERROR("GodotDart: Error detaching owner during instance free: ");
         GD_PRINT_ERROR(Dart_GetError(result));
-      }      
+      }
     }
 
     delete binding;

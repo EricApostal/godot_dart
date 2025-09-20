@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
 
 #include "gde_wrapper.h"
+#include "dart_bindings.h"
 
 namespace godot_dart {
 
@@ -31,6 +32,11 @@ void deinitialize_level(godot::ModuleInitializationLevel p_level) {
 } // namespace godot_dart
 
 extern "C" {
+
+  // todo: remove the stupid ai shit where it has two different definitions for embedded / not
+
+// Maintain a single instance of GodotDartBindings for the embedded runtime path
+static GodotDartBindings *s_dart_bindings = nullptr;
 
 void GDE_EXPORT initialize_level(godot::ModuleInitializationLevel p_level) {
   godot_dart::initialize_level(p_level);
@@ -61,11 +67,24 @@ bool GDE_EXPORT godot_dart_embedded_init(GDExtensionInterfaceGetProcAddress p_ge
   GDEWrapper::create_instance(p_get_proc_address, p_library);
   
   godot_dart::initialize_level(godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE);
+  if (!s_dart_bindings) {
+    s_dart_bindings = new GodotDartBindings();
+  }
+  if (!s_dart_bindings->initialize()) {
+    delete s_dart_bindings;
+    s_dart_bindings = nullptr;
+    return false;
+  }
   
   return true;
 }
 
 void GDE_EXPORT godot_dart_embedded_shutdown() {
+  if (s_dart_bindings) {
+    s_dart_bindings->shutdown();
+    delete s_dart_bindings;
+    s_dart_bindings = nullptr;
+  }
   godot_dart::deinitialize_level(godot::ModuleInitializationLevel::MODULE_INITIALIZATION_LEVEL_SCENE);
 }
 

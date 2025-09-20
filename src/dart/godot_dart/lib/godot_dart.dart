@@ -7,7 +7,6 @@ import 'src/core/gdextension.dart';
 import 'src/core/gdextension_ffi_bindings.dart';
 import 'src/core/type_info.dart';
 import 'src/extensions/async_extensions.dart';
-import 'src/gen/engine_classes.dart';
 import 'src/gen/utility_functions.dart';
 import 'src/variant/variant.dart';
 
@@ -30,6 +29,22 @@ export 'src/gen/builtins.dart';
 export 'src/gen/native_structures.dart';
 export 'src/variant/variant.dart' hide getToTypeConstructor;
 
+// Initialize the Dart DL API in the native library as early as possible.
+// This calls the C function `init_dart_api_dl(NativeApi.initializeApiDLData)`.
+final int _dartDlApiVersion = (() {
+  try {
+    final lib = DynamicLibrary.process();
+    final init = lib.lookupFunction<IntPtr Function(Pointer<Void>),
+        int Function(Pointer<Void>)>('init_dart_api_dl');
+    final ver = init(NativeApi.initializeApiDLData);
+    return ver;
+  } catch (_) {
+    // If the symbol isn't available yet, native side will print a helpful message
+    // and Dart can retry later before using any Dart_* APIs.
+    return 0;
+  }
+})();
+
 // ignore: unused_element
 late GodotDart _globalExtension;
 // ignore: unused_element
@@ -37,6 +52,17 @@ bool _isReloading = false;
 
 void registerGodot(int extensionToken, int bindingCallbacks) {
   print('GODOT DART REGISTER GODOT');
+  // Ensure the native Dart DL API is initialized (retry if top-level init failed).
+  if (_dartDlApiVersion == 0) {
+    try {
+      final lib = DynamicLibrary.process();
+      final init = lib.lookupFunction<IntPtr Function(Pointer<Void>),
+          int Function(Pointer<Void>)>('init_dart_api_dl');
+      init(NativeApi.initializeApiDLData);
+    } catch (_) {
+      // Ignore; native side will guard and print a helpful message if still uninitialized.
+    }
+  }
   final godotDart = DynamicLibrary.process();
   final ffiInterface = GDExtensionFFI(godotDart);
 

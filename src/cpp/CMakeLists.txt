@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
-project(godot_dart VERSION 0.1)
+# Enable both C and C++ since we also compile dart_api_dl.c
+project(godot_dart VERSION 0.1 LANGUAGES C CXX)
 
 set(GODOT_CPP_DIR "${PROJECT_SOURCE_DIR}/../../godot-cpp")
 set(EXAMPLE_DIR "${PROJECT_SOURCE_DIR}/../../example")
@@ -21,6 +22,8 @@ add_library(godot_dart SHARED
     godot_dart.cpp
     godot_string_wrappers.cpp
     ref_counted_wrapper.cpp
+    # Dart SDK DL API implementation (needed to use Dart_InitializeApiDL without linking Dart VM)
+    include/dart_api_dl.c
  )
 
 target_include_directories(godot_dart PUBLIC
@@ -28,6 +31,8 @@ target_include_directories(godot_dart PUBLIC
     "${GODOT_CPP_DIR}/gen/include"
     "${GODOT_CPP_DIR}/gdextension"
     "${PROJECT_SOURCE_DIR}"
+    # Make headers copied from the Dart SDK (like dart_api_dl.h) available with #include <dart_api_dl.h>
+    "${PROJECT_SOURCE_DIR}/include"
 )
 
 if(WIN32)

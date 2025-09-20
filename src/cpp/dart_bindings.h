@@ -7,11 +7,11 @@
 #include <thread>
 #include <vector>
 
-#include <dart_api.h>
+#include "include/dart_api_dl.h"
 #include <gdextension_interface.h>
 #include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/variant/string.hpp>
 
 #include "dart_instance_binding.h"
 #include "gde_dart_converters.h"
@@ -33,12 +33,12 @@ public:
   }
   ~GodotDartBindings();
 
-  bool initialize(const char *script_path, const char *package_config);
+  bool initialize();
   bool is_fully_initialized() const {
     return _fully_initialized;
   }
   void shutdown();
-  
+
   void reload_code();
 
   void bind_method(const TypeInfo &bind_type, const char *method_name, const TypeInfo &ret_type_info,

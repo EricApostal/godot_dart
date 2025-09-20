@@ -1,6 +1,6 @@
 #include "gde_dart_converters.h"
 
-#include <dart_api.h>
+#include <include/dart_api_dl.h>
 
 #include "dart_bindings.h"
 #include "dart_helpers.h"
