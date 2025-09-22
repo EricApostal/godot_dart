@@ -159,7 +159,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
   if (godot::internal::gdextension_interface_object_get_class_name(
           p_instance, p_token, reinterpret_cast<GDExtensionStringNamePtr>(class_name._native_ptr()))) {
     bindings->execute_on_dart_thread([&] {
-      Dart_EnterScope();
+      Dart_EnterScope_DL();
 
       Dart_Handle type_name = to_dart_string(class_name);
       DART_CHECK(type, bindings->find_dart_type(type_name), "Error finding Dart type");
@@ -168,7 +168,7 @@ static void *__engine_binding_create_callback(void *p_token, void *p_instance) {
         binding = new DartGodotInstanceBinding(persistent_type, p_instance);
       }
 
-      Dart_ExitScope();
+      Dart_ExitScope_DL();
     });
   }
 

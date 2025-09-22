@@ -70,9 +70,10 @@ bool GodotDartBindings::initialize() {
 
   printf("GodotDart: Entered Dart scope\n");
   // Dart_SetMessageNotifyCallback(dart_message_notify_callback);
-  printf("GodotDart: Set message notify callback\n");
+  printf("GodotDart: ree Set message notify callback\n");
 
-  Dart_Handle godot_dart_package_name = Dart_NewStringFromCString("package:godot_dart/godot_dart.dart");
+  Dart_Handle godot_dart_package_name = Dart_NewStringFromCString_DL("package:godot_dart/godot_dart.dart");
+  printf("DID STRING HOLY SHIT WE'RD COOKING!\n");
   DART_CHECK_RET(godot_dart_library, Dart_LookupLibrary(godot_dart_package_name), false,
                  "GodotDart: Initialization Error (Could not find the `godot_dart` "
                  "package)");
